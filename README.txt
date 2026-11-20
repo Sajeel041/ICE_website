@@ -11,7 +11,7 @@ GET STARTED
    Then visit http://localhost:8000
 
 HOSTING
-Upload index.html, style.css, app.js and the assets folder together to any
+Upload index.html, style.css, app.js, bridge-viewer.js and the assets folder to any
 static web host. Keep their relative paths unchanged. No build step, Node.js,
 database, or API keys are needed. The source HTML/CSS/JavaScript files are
 also the deployable website files.
@@ -19,7 +19,8 @@ also the deployable website files.
 EDITING
 index.html — page copy, navigation, registration/contact links and images.
 style.css — layout, colors, fonts, and responsive/mobile design.
-app.js — module details/dialogs and calendar download.
+app.js — module dialogs, mobile navigation, truss animation and calendar download.
+bridge-viewer.js — the interactive, canvas-rendered truss model.
 assets/ — all five campaign images, the source image used to display the ICE
 chapter logo, and the downloadable modules PDF.
 
