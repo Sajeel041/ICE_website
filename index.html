@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f1eee5">
+  <meta name="theme-color" content="#182520">
   <meta name="description" content="ConstructX 4.0 brings civil engineering students together for workshops, competitions and socials at GIK Institute, 4–6 December 2026.">
   <title>ConstructX 4.0 — ICE GIKI</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,6 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="preload" as="image" href="assets/bridge-hero.webp" fetchpriority="high">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="theme.css">
   <script src="bridge-viewer.js" defer></script>
   <script src="app.js" defer></script>
 </head>
@@ -71,7 +72,10 @@
       <figure class="hero-visual">
         <img src="assets/bridge-hero.webp" width="1122" height="1402" fetchpriority="high" alt="Concept illustration of a copper-toned steel arch bridge at sunset">
         <span class="frame-corners" aria-hidden="true"></span>
-        <figcaption>Architectural concept</figcaption>
+        <figcaption>
+          <span>Architectural concept</span>
+          <button class="button exhibit-button" type="button" data-module="bridge" data-show-model aria-haspopup="dialog">Inspect the 3D truss</button>
+        </figcaption>
       </figure>
     </section>
 

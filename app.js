@@ -56,6 +56,7 @@ document.querySelectorAll("[data-module]").forEach((button) => {
     setBridgeExpanded(false);
     dialog.showModal();
     dialog.scrollTop = 0;
+    if (button.hasAttribute("data-show-model")) openBridgeViewer();
   });
 });
 
@@ -70,12 +71,7 @@ dialog.addEventListener("click", (event) => {
   }
 });
 
-bridgeToggle.addEventListener("click", () => {
-  if (!bridgeInteractive.hidden) {
-    setBridgeExpanded(false);
-    return;
-  }
-
+function openBridgeViewer() {
   bridgeViewer ??= createBridgeViewer(document.getElementById("bridge-canvas"));
   if (!bridgeViewer) {
     bridgeError.hidden = false;
@@ -84,6 +80,11 @@ bridgeToggle.addEventListener("click", () => {
 
   setBridgeExpanded(true);
   bridgeViewer.reset();
+}
+
+bridgeToggle.addEventListener("click", () => {
+  if (bridgeInteractive.hidden) openBridgeViewer();
+  else setBridgeExpanded(false);
 });
 
 document.querySelectorAll("[data-view]").forEach((button) => {
