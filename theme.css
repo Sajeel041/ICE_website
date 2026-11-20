@@ -1,0 +1,131 @@
+:root {
+  --paper: #f4efe5;
+  --white: #fffaf1;
+  --ink: #2b2823;
+  --muted: #544d43;
+  --line: #d0c4b2;
+  --accent: #963b23;
+  --accent-hover: #752c19;
+  --green: #2e3c32;
+  --green-text: #e2e8d8;
+  --glass-border: #fffcf2cc;
+  --glass-shadow: 0 1px 0 #fffaf4 inset, 0 13px 36px #44342626;
+}
+
+body {
+  background: radial-gradient(ellipse at 10% 12%, #fae4d6, transparent 36rem),
+              radial-gradient(ellipse at 95% 43%, #dee6d8, transparent 44rem),
+              var(--paper);
+}
+.site-header { background: #faf4e8; }
+.button { border-radius: 9px; }
+.hero {
+  position: relative;
+  isolation: isolate;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  min-height: clamp(34rem, 52vw, 44rem);
+  margin-block: clamp(.9rem, 2.5vw, 2rem);
+  padding: clamp(1.1rem, 3vw, 2.8rem);
+  gap: 0;
+}
+.hero-copy {
+  position: relative;
+  z-index: 2;
+  grid-column: 2;
+  justify-self: end;
+  width: min(100%, 32rem);
+  padding: clamp(1.2rem, 3vw, 2.2rem);
+  border: 1px solid var(--glass-border);
+  border-radius: 1.65rem;
+  background: #fff4e4;
+  box-shadow: var(--glass-shadow), 0 15px 48px #23180e55;
+}
+.hero h1 {
+  font-size: clamp(3.2rem, 6vw, 6rem);
+  line-height: .86;
+  overflow-wrap: anywhere;
+}
+.hero-tagline { font-size: clamp(1.1rem, 1.7vw, 1.5rem); }
+.hero-event { border-top-color: #a28d77; }
+.hero-visual {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  min-height: 0;
+  border-radius: 1.85rem;
+  background: #7e5b48;
+  box-shadow: 0 12px 30px #45322530;
+}
+.hero-visual img { object-position: center 53%; }
+.hero-visual::after { background: linear-gradient(0deg, #251c15b8, transparent 26%); }
+.hero-visual .frame-corners { display: none; }
+.hero-visual figcaption { text-shadow: 0 1px 4px #110c06; }
+
+.modules {
+  background-color: #e5e9dc;
+  background-image:
+    linear-gradient(#536a5412 1px, transparent 1px),
+    linear-gradient(90deg, #536a5412 1px, transparent 1px),
+    radial-gradient(ellipse at 16% 8%, #f9ddcd, transparent 58%),
+    radial-gradient(ellipse at 90% 62%, #d4e0d2, transparent 68%);
+  background-size: 28px 28px, 28px 28px, auto, auto;
+}
+.module-card, .contact-cards > div {
+  background: linear-gradient(140deg, #fffaf1, #f3f0e7);
+  border-color: var(--glass-border);
+  border-radius: 1.1rem;
+  box-shadow: var(--glass-shadow);
+}
+.module-card { padding: .45rem; }
+.module-visual { border-radius: .75rem .75rem .35rem .35rem; }
+.card-copy { padding: clamp(.85rem, 1.65vw, 1.45rem); }
+.module-card:focus-within { outline-offset: 3px; }
+@media (hover: hover) {
+  .module-card:hover { box-shadow: var(--glass-shadow), 0 8px 24px #45322520; }
+}
+.socials {
+  background: radial-gradient(ellipse at 10% 10%, #4c6453, transparent 78%), var(--green);
+}
+.social-visual { margin-block: 1rem; border-radius: 1.1rem; }
+.contact { background: linear-gradient(125deg, #e3e8da, #f0e6d9); }
+.closing { background: #354639; }
+
+dialog {
+  border-radius: 1.25rem;
+  background: #fff8eb;
+  box-shadow: 0 22px 70px #21160d67;
+}
+dialog::backdrop { background: #2d2b22b3; }
+.dialog-note { background: #efeadf; }
+.bridge-demo { border-radius: .85rem; overflow: hidden; background: #f5f0e4; }
+.viewer-controls button { border-radius: .4rem; }
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .hero-copy {
+    background: linear-gradient(130deg, #fff5e6ed, #fff5e6db);
+    -webkit-backdrop-filter: blur(18px) saturate(1.1);
+    backdrop-filter: blur(18px) saturate(1.1);
+  }
+  dialog::backdrop {
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
+}
+
+@media (max-width: 47.5rem) {
+  .hero { display: grid; grid-template-columns: minmax(0, 1fr); min-height: 0; padding: .8rem .8rem 2.5rem; }
+  .hero-copy { grid-column: 1; width: 100%; margin-top: clamp(5rem, 22vw, 9rem); padding: 1.2rem; border-radius: 1.2rem; }
+  .hero h1 { font-size: clamp(2.55rem, 10.5vw, 5.1rem); }
+  .hero-visual { aspect-ratio: auto; border-radius: 1.4rem; }
+  .hero-visual img { object-position: 50% 34%; }
+  .hero-visual figcaption { left: 1.15rem; bottom: .9rem; }
+  .hero-event { gap: .55rem 1rem; }
+  .social-visual { margin-block: 0; }
+}
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .hero-copy { background: #fff4e4; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  dialog::backdrop { -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+@media (forced-colors: active) {
+  .hero-copy, .module-card, .contact-cards > div { border-color: CanvasText; }
+}
