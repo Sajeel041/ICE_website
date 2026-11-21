@@ -21,7 +21,7 @@ index.html — page copy, navigation, registration/contact links and images.
 style.css — layout, colors, fonts, and responsive/mobile design.
 theme.css — the Spatial UI treatment.
 app.js — module dialogs, mobile navigation, truss animation and calendar download.
-bridge-viewer.js — the interactive, canvas-rendered truss model.
+bridge-viewer.js — the interactive timber truss and its lit workshop exhibit.
 assets/ — all five campaign images, the source image used to display the ICE
 chapter logo, and the downloadable modules PDF.
 

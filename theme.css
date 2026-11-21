@@ -9,12 +9,13 @@
   --accent-hover: #ffc4a7;
   --green: #14201b;
   --green-text: #c5d0c0;
-  --raised: #2c3e34;
-  --depth: 0 20px 36px #08120e73;
+  --depth: 0 24px 52px #08120e99;
 }
 
 body {
-  background: radial-gradient(ellipse at 78% 5%, #354a3c, transparent 40rem), var(--paper);
+  background: radial-gradient(ellipse at 78% 4%, #564635, transparent 36rem),
+              radial-gradient(ellipse at 90% 19%, #253e32, transparent 52rem),
+              var(--paper);
 }
 .button-primary, .button-outline:hover, .viewer-controls button:hover {
   color: #312017;
@@ -35,7 +36,7 @@ body {
   grid-template-rows: minmax(0, 1fr) auto;
   min-height: 0;
   height: clamp(29rem, 42vw, 40rem);
-  padding: 1rem 0 0 1rem;
+  padding: .75rem .7rem .45rem 1.25rem;
   overflow: visible;
   perspective: 70rem;
   background: none;
@@ -44,23 +45,55 @@ body {
   content: "";
   position: absolute;
   z-index: -1;
-  inset: 0 1rem 2.4rem 0;
-  border: 1px solid #849b8980;
+  inset: 0 1.75rem 2.5rem 0;
+  border: 1px solid #ad926b80;
   background:
-    linear-gradient(90deg, #a4bca528 1px, transparent 1px) 0 0 / 1.25rem 1.25rem,
-    linear-gradient(#a4bca528 1px, transparent 1px) 0 0 / 1.25rem 1.25rem,
-    #263b30;
+    linear-gradient(90deg, #c0b1901a 1px, transparent 1px) 0 0 / 1.25rem 1.25rem,
+    linear-gradient(#c0b1901a 1px, transparent 1px) 0 0 / 1.25rem 1.25rem,
+    linear-gradient(138deg, #3e4335, #23352c);
 }
-.hero-visual::after, .hero-visual .frame-corners { display: none; }
-.hero-visual img {
+.hero-visual::after { display: none; }
+.exhibit-art {
+  grid-area: 1 / 1;
   position: relative;
   min-height: 0;
-  object-position: 50% 54%;
-  border: 1px solid #9eb09b80;
+  overflow: hidden;
+  border: 1px solid #cdb58f83;
   box-shadow: var(--depth);
-  transform: rotateY(-7deg);
+  transform: rotateY(-5deg);
+}
+.exhibit-art .exhibit-photo { object-position: 50% 56%; }
+.exhibit-photo-label {
+  position: absolute;
+  top: .9rem;
+  left: .9rem;
+  padding: .3rem .55rem;
+  background: #171c17de;
+  color: #fff4df;
+  font-size: .75rem;
+}
+.exhibit-detail {
+  position: relative;
+  z-index: 1;
+  grid-area: 1 / 1;
+  place-self: end;
+  width: min(39%, 14rem);
+  aspect-ratio: 1.5;
+  margin: 0 .55rem 1.3rem 0;
+  padding: .28rem;
+  background: #dfcfad;
+  border: 1px solid #ffe5b6;
+  box-shadow: 0 13px 30px #0d120dd1;
+  transform: rotate(3deg);
+}
+.exhibit-detail img {
+  position: static;
+  width: 100%;
+  height: 100%;
+  object-position: 48% 56%;
 }
 .hero-visual figcaption {
+  grid-area: 2 / 1;
   position: relative;
   z-index: 1;
   inset: auto;
@@ -71,8 +104,8 @@ body {
   gap: .45rem .9rem;
   margin: -.65rem 0 0 1.5rem;
   padding: .55rem .65rem .55rem .9rem;
-  background: var(--raised);
-  border: 1px solid var(--line);
+  background: linear-gradient(165deg, #435044, #28362d);
+  border: 1px solid #a38f6b;
   color: var(--ink);
   box-shadow: var(--depth);
 }
@@ -96,18 +129,22 @@ dialog:has(#bridge-demo:not([hidden])) { width: min(54rem, 100% - 2rem); }
 dialog::backdrop { background: #08130ed4; }
 .dialog-note, .viewer-toolbar, .viewer-legend { background: #1d2c25; }
 .viewer-controls button { border-color: var(--line); }
-#bridge-canvas { height: clamp(13rem, 38vw, 23rem); border-block: 1px solid var(--line); }
+#bridge-canvas { height: clamp(13rem, 42vw, 25rem); border-block: 1px solid var(--line); background: #302c21; }
 .viewer-legend li::before { border-color: #a9b8aa; }
+.legend-deck { --legend-color: #e5bd89; }
+.legend-joints { --legend-color: #a6aa99; }
+.legend-bracing { --legend-color: #b77349; }
 
 @media (max-width: 47.5rem) {
   .hero { gap: 1.25rem; }
   .hero h1 { font-size: clamp(3rem, 12vw, 6rem); }
   .hero-visual { height: auto; aspect-ratio: auto; }
-  .hero-visual img { height: auto; aspect-ratio: 1.5; }
+  .exhibit-art { aspect-ratio: 1.38; transform: none; }
+  .exhibit-detail { margin: 0 .3rem 1rem 0; }
   .hero-visual figcaption { margin-left: .5rem; }
   .social-visual { margin-block: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero-visual img { transform: none; }
+  .exhibit-art, .exhibit-detail { transform: none; }
 }
