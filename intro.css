@@ -3,8 +3,8 @@
 .ice-intro-active:not(.ice-intro-revealing) body > :not(#ice-intro) { visibility: hidden; }
 
 .ice-intro-active #ice-intro {
-  --ice-light: #84f6ff;
-  --ice-blue: #00cce9;
+  --ice-light: #d5edff;
+  --ice-blue: #72c4ff;
   position: fixed;
   inset: 0;
   z-index: 100;
@@ -52,7 +52,7 @@
   box-shadow: 0 0 18px 4px #09cfff80, inset 0 0 28px 5px #00b6eb55;
   opacity: 0;
 }
-.intro-echo { border-width: 1px; box-shadow: 0 0 10px #16cfff88; }
+.intro-echo { border: 1px solid #dfd2ff; box-shadow: 0 0 10px #aca1ff88; }
 .intro-flash {
   background: radial-gradient(ellipse closest-side, #bcfbffbb, #24d8f860 24%, #0391c222 56%, transparent);
   opacity: 0;

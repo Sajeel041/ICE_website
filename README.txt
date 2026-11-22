@@ -20,11 +20,10 @@ also the deployable website files.
 EDITING
 index.html — page copy, navigation, registration/contact links and images.
 style.css — layout, colors, fonts, and responsive/mobile design.
-theme.css — the Spatial UI treatment.
+theme.css — the powder-blue and lavender theme, local fonts and bridge hero.
 app.js — module dialogs, mobile navigation, truss animation and calendar download.
 bridge-viewer.js — the interactive timber truss and its lit workshop exhibit.
-assets/ — all five campaign images, the source image used to display the ICE
-chapter logo, and the downloadable modules PDF.
+assets/ — campaign images, typefaces and their licences, and the modules PDF.
 
 HOMEPAGE INTRO
 The intro uses the original ICE Logo Banner.jfif.jpeg over the live homepage.
@@ -47,16 +46,22 @@ Coordinator: Syed Huzaifa — 0317 4785695
 Contact details and 25 November 2026 deadline were taken from the supplied
 registration form when this version was prepared. Update them if changed.
 
-Google Fonts are loaded online, with system-font fallbacks. The registration
+Instrument Sans and Instrument Serif are bundled under assets/fonts. The registration
 form, Instagram, WhatsApp and map links need an internet connection.
 The website links to the Google Form; it does not store registrations itself.
 
 IMAGERY
-The five campaign visuals are AI-generated illustrative imagery, not actual
-event/venue photographs. The website includes this distinction. The ICE logo
-is displayed from an earlier ConstructX poster published on GIKI's website:
-https://giki.edu.pk/wp-content/uploads/2025/12/construct.jpg
-Only its logo region is displayed; old poster dates and fees are not used.
+The campaign visuals are AI-generated illustrations. The bridge-blue-hour.webp
+hero depicts a conceptual tied-arch bridge. The intro displays the supplied
+ICE GIK Student Chapter banner.
+
+Hero art direction (built-in ImageGen):
+"Landscape architectural photograph for a civil engineering event. Sculptural
+white tied-arch bridge with amber lighting at blue hour, over a river surrounded
+by mountain silhouettes. Bridge concentrated on the right with a broad expanse
+of clean powder blue sky and light lavender mountain mist to the left for
+website typography. Polished editorial photography, realistic details. No
+lettering or interface."
 
 EXPORT
 Source version: c03e59b7197a69370b7b8403bb11f01e5b0bf2ee

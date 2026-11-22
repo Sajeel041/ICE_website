@@ -4,9 +4,9 @@ const modules = {
   workshop: {
     tag: "Workshop",
     title: "Technical Workshop",
-    intro: "Connect what you study in class with how real projects are designed, built and managed.",
+    intro: "Meet civil engineers who take projects from the drawing board to the site.",
     subtitle: "Inside the session",
-    detail: "Experienced civil engineering professionals share practical skills and current industry practice. Ask questions, join the discussion and connect with professionals and fellow students.",
+    detail: "Bring a question from class. The workshop is a chance to ask practising engineers how they approach design, construction and project management.",
     note: "Speakers, topics and session timings are awaiting announcement.",
   },
   bridge: {
@@ -14,7 +14,7 @@ const modules = {
     title: "Load the Bridge",
     intro: "Design and build a bridge from the materials provided, then see how much load it can carry.",
     subtitle: "The challenge",
-    detail: "Teams plan and construct their own bridge models. Smart use of materials, strong joints and careful construction make the difference. Every bridge is loaded in a live test and its performance is measured.",
+    detail: "Plan the joints and build your model from the supplied materials. Each team puts its bridge through a live load test.",
     note: "Team size, materials, dimensions and scoring details will be shared with registered participants before the event.",
   },
   egg: {
@@ -22,7 +22,7 @@ const modules = {
     title: "Drop the Egg",
     intro: "Build a structure that absorbs impact and lets an egg survive a fall.",
     subtitle: "The challenge",
-    detail: "Teams design a protective structure from the materials provided. The structure is dropped from a height, and the egg inside has to survive.",
+    detail: "Use the supplied materials to protect an egg inside a frame. The test comes when the frame is dropped and the egg is checked for cracks.",
     note: "Team size, materials, drop height and scoring details will be shared with registered participants before the event.",
   },
 };
@@ -114,6 +114,16 @@ if ("IntersectionObserver" in window) {
   }, { threshold: 0.25 });
   drawing.classList.add("is-ready");
   drawingObserver.observe(drawing);
+
+  const sectionObserver = new IntersectionObserver((entries, observer) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      entry.target.classList.add("section-arrived");
+      observer.unobserve(entry.target);
+    }
+  }, { threshold: 0.12 });
+  document.querySelectorAll(".modules-heading, .module-card, .about-copy, .social-visual, .guide-row")
+    .forEach(element => sectionObserver.observe(element));
 }
 
 let toastTimer;

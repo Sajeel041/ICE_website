@@ -208,9 +208,9 @@
     track(overlay, cue.entrance, cue.clear, [{ opacity: 1 }, { opacity: 0 }]);
     const entrance = [
       [".site-header", 0, -16], [".presented, #hero-title", 140, 18],
-      [".hero-tagline, .hero-description, .hero-event", 245, 18],
-      [".hero-actions .button", 330, 16], [".hero-actions .text-link, .deadline", 385, 16],
-      [".hero-visual", 450, 24],
+      [".hero-description, .event-strip", 245, 18],
+      [".hero-actions .button-primary", 330, 16], [".programme-link", 385, 16],
+      [".hero-model", 450, 16],
     ];
     for (const [selector, delay, y] of entrance) {
       document.querySelectorAll(selector).forEach(el => track(el,
