@@ -9,9 +9,9 @@
   if (motion.matches || !motion.addEventListener || !("inert" in HTMLElement.prototype)) return;
   const replay = new URLSearchParams(location.search).get("intro") === "1";
   const sessionKey = "ice-gik.intro.seen";
-  const localOpen = location.protocol === "file:" &&
-    performance.getEntriesByType("navigation")[0]?.type === "navigate";
-  if (!replay && !localOpen) {
+  const navigationType = performance.getEntriesByType("navigation")[0]?.type;
+  const localOpen = location.protocol === "file:" && navigationType === "navigate";
+  if (!replay && !localOpen && navigationType !== "reload") {
     if (history.state?.[sessionKey]) return;
     try {
       if (sessionStorage.getItem(sessionKey)) return;

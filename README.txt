@@ -28,9 +28,9 @@ chapter logo, and the downloadable modules PDF.
 
 HOMEPAGE INTRO
 The intro uses the original ICE Logo Banner.jfif.jpeg over the live homepage.
-Opening index.html directly from disk plays the intro. Refreshing that tab
-skips it. On a web server it plays once per tab session. Append ?intro=1
-to the homepage URL to replay on demand.
+The intro plays on the first visit and on every reload, both on a web server
+and when opening index.html from disk. Append ?intro=1 to force a replay
+when following a link back to the homepage in the same tab.
 Skip Intro and Escape dismiss it. Reduced-motion visitors go straight to the page.
 Set data-ice-intro="off" on the html element in index.html to disable it sitewide.
 In intro.js, speed controls the whole sequence (1 is normal, 2 is twice as fast).
