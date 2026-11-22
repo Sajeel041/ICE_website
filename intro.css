@@ -1,0 +1,76 @@
+/* The document opts in before the first paint. With no script the region stays hidden. */
+.ice-intro-active { overflow: hidden; }
+.ice-intro-active:not(.ice-intro-revealing) body > :not(#ice-intro) { visibility: hidden; }
+
+.ice-intro-active #ice-intro {
+  --ice-light: #84f6ff;
+  --ice-blue: #00cce9;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid !important;
+  place-items: center;
+  overflow: hidden;
+  isolation: isolate;
+  background: #030609;
+}
+
+#ice-intro > :not(.intro-skip) { grid-area: 1 / 1; pointer-events: none; }
+.intro-particles, .intro-halo, .intro-flash { position: absolute; inset: 0; width: 100%; height: 100%; }
+.intro-halo {
+  background: radial-gradient(ellipse closest-side, #00bde32c, #06759d12 52%, transparent);
+  opacity: 0;
+}
+.intro-emblem {
+  position: relative;
+  width: min(78vw, 42rem, 156vh);
+  aspect-ratio: 2064 / 512;
+  filter: drop-shadow(0 0 5px var(--ice-blue)) drop-shadow(0 0 13px #00bbeb88);
+}
+.intro-aperture {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--ice-light);
+  clip-path: inset(calc(50% - 6px) calc(50% - 6px) round 6px);
+}
+.intro-aperture img { width: 100%; height: 100%; object-fit: contain; opacity: 0; }
+.intro-scan, .intro-sweep { position: absolute; inset: 0; opacity: 0; }
+.intro-scan {
+  border: 1px solid var(--ice-light);
+  background: repeating-linear-gradient(0deg, transparent 0 3px, #a8fbff70 3px 4px);
+}
+.intro-sweep {
+  background: linear-gradient(104deg, transparent 30%, #e7ffff22 46%, #c9ffffcc 49.5%, transparent 52%);
+}
+.intro-wave {
+  position: absolute;
+  width: 100vmax;
+  aspect-ratio: 1;
+  border: 2px solid var(--ice-light);
+  border-radius: 50%;
+  box-shadow: 0 0 18px 4px #09cfff80, inset 0 0 28px 5px #00b6eb55;
+  opacity: 0;
+}
+.intro-echo { border-width: 1px; box-shadow: 0 0 10px #16cfff88; }
+.intro-flash {
+  background: radial-gradient(ellipse closest-side, #bcfbffbb, #24d8f860 24%, #0391c222 56%, transparent);
+  opacity: 0;
+}
+.intro-skip {
+  position: absolute;
+  right: max(1.25rem, env(safe-area-inset-right));
+  bottom: max(1.25rem, env(safe-area-inset-bottom));
+  display: inline-flex;
+  align-items: center;
+  gap: .75rem;
+  min-height: 44px;
+  padding: .5rem 1rem;
+  border: 1px solid #70bec54d;
+  border-radius: 2rem;
+  background: #061015;
+  color: #d7eff2;
+  font: 500 .8125rem/1 var(--body);
+}
+.intro-skip span { color: var(--ice-light); }
+.intro-skip:hover, .intro-skip:focus-visible { border-color: var(--ice-light); outline-color: var(--ice-light); }

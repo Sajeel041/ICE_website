@@ -11,7 +11,8 @@ GET STARTED
    Then visit http://localhost:8000
 
 HOSTING
-Upload index.html, style.css, theme.css, app.js, bridge-viewer.js and the assets folder to any
+Upload index.html, style.css, theme.css, intro.css, app.js, intro.js,
+bridge-viewer.js, ICE Logo Banner.jfif.jpeg and the assets folder to any
 static web host. Keep their relative paths unchanged. No build step, Node.js,
 database, or API keys are needed. The source HTML/CSS/JavaScript files are
 also the deployable website files.
@@ -24,6 +25,20 @@ app.js — module dialogs, mobile navigation, truss animation and calendar downl
 bridge-viewer.js — the interactive timber truss and its lit workshop exhibit.
 assets/ — all five campaign images, the source image used to display the ICE
 chapter logo, and the downloadable modules PDF.
+
+HOMEPAGE INTRO
+The intro uses the original ICE Logo Banner.jfif.jpeg over the live homepage.
+Opening index.html directly from disk plays the intro. Refreshing that tab
+skips it. On a web server it plays once per tab session. Append ?intro=1
+to the homepage URL to replay on demand.
+Skip Intro and Escape dismiss it. Reduced-motion visitors go straight to the page.
+Set data-ice-intro="off" on the html element in index.html to disable it sitewide.
+In intro.js, speed controls the whole sequence (1 is normal, 2 is twice as fast).
+The cue times are milliseconds at normal speed. particleCount controls desktop
+and mobile density. drawParticles sets the colors, trails and burst distances.
+In intro.css, .intro-emblem, .intro-halo and .intro-flash set the glow and bloom.
+.intro-wave and .intro-echo style the rings. runTimeline in intro.js controls
+their expansion and fade, the charging glow, and the homepage entrance delays.
 
 EXTERNAL LINKS
 Registration: https://forms.gle/UC5qz2VmQDWVADrw6
