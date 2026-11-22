@@ -40,7 +40,7 @@ In intro.css, .intro-emblem, .intro-halo and .intro-flash set the glow and bloom
 their expansion and fade, the charging glow, and the homepage entrance delays.
 
 EXTERNAL LINKS
-Registration: https://forms.gle/UC5qz2VmQDWVADrw6
+Registration: https://forms.gle/9BCeNGTWMjbiToiWA
 Instagram: https://www.instagram.com/ice.gik/
 Coordinator: Syed Huzaifa — 0317 4785695
 Contact details and 25 November 2026 deadline were taken from the supplied
