@@ -12,7 +12,6 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="theme.css">
   <link rel="stylesheet" href="intro.css">
-  <script src="bridge-viewer.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
@@ -137,32 +136,39 @@
     </section>
 
     <section class="bridge-sequence" id="bridge-challenge" aria-labelledby="bridge-title">
-      <div class="bridge-scene">
-        <header class="bridge-heading shell">
-          <div>
-            <p class="eyebrow section-label">Bridge challenge</p>
-            <h2 id="bridge-title">Load the Bridge</h2>
-            <p class="bridge-scroll-hint" hidden>Scroll to build the truss and inspect it from every angle.</p>
+      <div class="bridge-track">
+        <div class="bridge-scene">
+          <div class="bridge-stage">
+            <img id="bridge-preview" src="assets/bridge-model.webp" loading="lazy" width="1536" height="1024" alt="Illustration of a wooden truss bridge model">
+            <canvas id="bridge-canvas" role="img" aria-label="A timber truss bridge assembled on a workshop bench, with a plank deck, bracing and glued joints" hidden></canvas>
           </div>
-          <button class="text-link" type="button" data-module="bridge" aria-haspopup="dialog">Challenge details</button>
-        </header>
-        <div class="bridge-stage">
-          <img id="bridge-preview" src="assets/bridge-model.webp" loading="lazy" width="1536" height="1024" alt="Illustration of a wooden truss bridge model">
-          <canvas id="bridge-canvas" role="img" aria-label="Timber truss bridge with a plank deck, diagonal bracing and metal joints" hidden></canvas>
-        </div>
-        <div class="bridge-info shell">
-          <div class="bridge-status" hidden>
-            <div class="bridge-status-label">
-              <span id="bridge-phase">Foundation</span>
-              <span id="bridge-percent" aria-hidden="true">0%</span>
+          <div class="bridge-overlay shell">
+            <header class="bridge-heading">
+              <p class="eyebrow section-label">Bridge challenge</p>
+              <h2 id="bridge-title">Load the Bridge</h2>
+              <p class="bridge-scroll-hint" hidden>Scroll to assemble and inspect the span.</p>
+              <button type="button" class="bridge-motion-toggle text-link" hidden>Play scroll animation</button>
+            </header>
+            <div class="bridge-status" hidden>
+              <div class="bridge-status-label">
+                <span id="bridge-phase">Bench preparation</span>
+                <span id="bridge-percent" aria-hidden="true">0%</span>
+              </div>
+              <progress id="bridge-progress" aria-label="Bridge sequence progress" max="100" value="0"></progress>
             </div>
-            <progress id="bridge-progress" aria-label="Bridge sequence progress" max="100" value="0"></progress>
           </div>
-          <ul class="viewer-legend" aria-label="Bridge components by colour">
-            <li class="legend-deck">Deck</li>
-            <li class="legend-joints">Joints</li>
-            <li class="legend-bracing">Diagonal bracing</li>
-          </ul>
+        </div>
+      </div>
+      <div class="bridge-details shell">
+        <h3>The challenge</h3>
+        <div class="bridge-details-copy">
+          <p>Design and build a bridge from the materials provided, then see how much load it can carry.</p>
+          <p>Plan the joints and build your model from the supplied materials. Each team puts its bridge through a live load test.</p>
+          <p>Team size, materials, dimensions and scoring details will be shared with registered participants before the event.</p>
+          <div class="bridge-details-actions">
+            <a href="https://forms.gle/9BCeNGTWMjbiToiWA" target="_blank" rel="noopener" class="text-link">Register</a>
+            <a href="assets/ConstructX-4.0-Modules.pdf" target="_blank" rel="noopener" class="text-link">Read the event guide</a>
+          </div>
         </div>
       </div>
     </section>
