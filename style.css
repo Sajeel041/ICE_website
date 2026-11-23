@@ -241,25 +241,74 @@ dialog h2 { font-size: clamp(2.8rem, 6vw, 4.25rem); padding-right: .6rem; }
 .dialog-note { background: #edecf9; border-left: 3px solid var(--accent); padding: .75rem 1rem; margin-top: .9rem; }
 .dialog-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1rem; margin-top: 1.15rem; }
 
-.bridge-demo { margin-top: 1.2rem; border: 1px solid var(--line); background: #edecf9; }
-.bridge-demo-heading { display: flex; justify-content: space-between; align-items: center; gap: .65rem; padding: .85rem 1rem; }
-.bridge-demo-heading h3 { font-size: 1.65rem; }
-.bridge-demo-heading p { margin-top: .15rem; font-size: .875rem; color: var(--muted); }
-.bridge-demo-heading .button { min-height: 2.75rem; padding-inline: .65rem; flex: none; }
-#bridge-preview { width: 100%; height: clamp(8rem, 23vw, 13rem); object-fit: cover; object-position: 50% 56%; }
-#bridge-canvas { display: block; width: 100%; height: clamp(11rem, 40vw, 17rem); background: var(--night); cursor: grab; touch-action: pan-y; }
-#bridge-canvas:active { cursor: grabbing; }
-.viewer-toolbar { padding: .75rem 1rem; display: flex; justify-content: space-between; align-items: center; gap: .4rem .75rem; flex-wrap: wrap; }
-.viewer-toolbar p, #bridge-error { color: var(--muted); font-size: .875rem; }
-.viewer-controls { display: flex; flex-wrap: wrap; gap: .35rem; }
-.viewer-controls button { min-height: 2.75rem; padding-inline: .65rem; border: 1px solid var(--line); background: var(--white); font-size: .875rem; font-weight: 700; }
-.viewer-controls button:hover { background: var(--ink); color: var(--white); }
-.viewer-legend { display: flex; flex-wrap: wrap; gap: .35rem .85rem; list-style: none; margin: 0; padding: 0 1rem .75rem; font-size: .8125rem; }
+.bridge-sequence {
+  --bridge-travel: 255svh;
+  margin-block: clamp(2rem, 6vw, 5rem);
+}
+.bridge-sequence.has-scroll-sequence::after {
+  content: "";
+  display: block;
+  height: var(--bridge-travel);
+}
+.bridge-scene {
+  border-block: 1px solid var(--line);
+  background: #f5f2fb;
+}
+.has-scroll-sequence .bridge-scene { position: sticky; top: 0; }
+.bridge-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem 1.5rem;
+  padding-block: clamp(.85rem, 2vw, 1.5rem);
+}
+.bridge-heading .section-label { margin-bottom: .55rem; }
+.bridge-heading h2 { font-size: clamp(2rem, 4.7vw, 4rem); }
+.bridge-scroll-hint { color: var(--muted); margin-top: .3rem; }
+.bridge-stage { background: var(--night); }
+#bridge-preview, #bridge-canvas {
+  display: block;
+  width: 100%;
+  height: min(60svh, 40rem);
+  min-height: 11rem;
+}
+#bridge-preview { object-fit: cover; object-position: 50% 56%; }
+#bridge-canvas { touch-action: pan-y pinch-zoom; }
+#bridge-canvas.can-inspect { cursor: grab; }
+#bridge-canvas.can-inspect:active { cursor: grabbing; }
+.bridge-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .65rem clamp(1.25rem, 4vw, 3.5rem);
+  padding-block: .75rem;
+}
+.bridge-status { flex: 1 1 24rem; }
+.bridge-status-label { display: flex; gap: .65rem; justify-content: space-between; font-size: .875rem; font-weight: 700; }
+#bridge-percent { font-variant-numeric: tabular-nums; }
+#bridge-progress {
+  display: block;
+  width: 100%;
+  height: .35rem;
+  margin-top: .5rem;
+  accent-color: var(--accent);
+}
+
+@media (max-width: 640px) {
+  .bridge-sequence { --bridge-travel: 215svh; }
+  #bridge-preview, #bridge-canvas { height: min(44svh, 23rem); }
+}
+@media (max-height: 42rem) {
+  .bridge-heading, .bridge-info { padding-block: .55rem; }
+  .bridge-heading h2 { font-size: clamp(1.85rem, 4vw, 2.75rem); }
+  #bridge-preview, #bridge-canvas { height: 42svh; min-height: 6rem; }
+}
+.viewer-legend { display: flex; flex-wrap: wrap; gap: .35rem .85rem; list-style: none; margin: 0; padding: 0; font-size: .875rem; }
 .viewer-legend li::before { content: ""; display: inline-block; width: .65rem; height: .65rem; margin-right: .3rem; border: 1px solid #4b5146; background: var(--legend-color); }
 .legend-deck { --legend-color: #efd0a3; }
 .legend-joints { --legend-color: #939f89; }
 .legend-bracing { --legend-color: #c6764d; }
-#bridge-error { padding: .65rem 1rem; }
 
 #toast {
   position: fixed;

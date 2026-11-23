@@ -25,9 +25,15 @@ Open [localhost:8000](http://localhost:8000). The site uses HTML, CSS, and JavaS
 | `index.html` | Page content, programme, and registration links |
 | `style.css`, `theme.css` | Layout, responsive styles, and typography |
 | `app.js` | Programme dialogs, mobile navigation, and calendar download |
-| `bridge-viewer.js` | Interactive truss model |
+| `bridge-viewer.js` | Canvas truss model and scroll timeline |
 | `intro.js`, `intro.css` | Animated ICE banner and homepage transition |
 | `assets/` | Campaign illustrations, bundled fonts and licences, and the event guide |
+
+## Bridge sequence
+
+- **Construction speed.** In `bridge-viewer.js`, edit the `start` and `end` fractions in `bridgeTimeline`. A wider interval gives a stage more scroll distance and slows it down. Keep adjacent stages aligned. The stagger in `prepareBridgeMembers` sets how much neighboring parts overlap as they move.
+- **Scroll distance.** Change `--bridge-travel` in `style.css`. It defaults to `255svh` and drops to `215svh` on screens up to 640px wide.
+- **Rotation sensitivity.** The last 35% of the timeline maps linearly to one full turn. Move both `inspection.end` and `rotation.start` earlier for fewer degrees per scroll pixel, or later for more. Keep `rotation.end` at 1.
 
 ## Deployment
 

@@ -70,11 +70,11 @@
           <a class="button programme-link" href="#modules">View programme <span aria-hidden="true">↓</span></a>
         </div>
       </div>
-      <button class="hero-model" type="button" data-module="bridge" data-show-model aria-haspopup="dialog">
+      <a class="hero-model" href="#bridge-challenge">
         <img src="assets/bridge-model.webp" width="80" height="64" alt="">
         <span><small>Interactive model</small><strong>Explore the truss</strong></span>
         <span class="model-arrow" aria-hidden="true">↗</span>
-      </button>
+      </a>
     </section>
     <dl class="event-strip shell" aria-label="Event details">
       <div><dt><i class="event-icon date-icon" aria-hidden="true"></i>Event dates</dt><dd>4–6 December 2026</dd></div>
@@ -119,7 +119,7 @@
               <p class="eyebrow">Bridge challenge</p>
               <h3>Load the Bridge</h3>
               <p>Build a model span, then watch what happens as the load goes up.</p>
-              <button class="card-action" type="button" data-module="bridge" aria-haspopup="dialog">Bridge challenge details</button>
+              <a class="card-action" href="#bridge-challenge">Explore the 3D bridge</a>
             </div>
           </article>
           <article class="module-card">
@@ -133,6 +133,37 @@
           </article>
         </div>
         <p class="module-note">Team sizes, materials, dimensions, drop height and scoring details will be shared with registered participants before the event.</p>
+      </div>
+    </section>
+
+    <section class="bridge-sequence" id="bridge-challenge" aria-labelledby="bridge-title">
+      <div class="bridge-scene">
+        <header class="bridge-heading shell">
+          <div>
+            <p class="eyebrow section-label">Bridge challenge</p>
+            <h2 id="bridge-title">Load the Bridge</h2>
+            <p class="bridge-scroll-hint" hidden>Scroll to build the truss and inspect it from every angle.</p>
+          </div>
+          <button class="text-link" type="button" data-module="bridge" aria-haspopup="dialog">Challenge details</button>
+        </header>
+        <div class="bridge-stage">
+          <img id="bridge-preview" src="assets/bridge-model.webp" loading="lazy" width="1536" height="1024" alt="Illustration of a wooden truss bridge model">
+          <canvas id="bridge-canvas" role="img" aria-label="Timber truss bridge with a plank deck, diagonal bracing and metal joints" hidden></canvas>
+        </div>
+        <div class="bridge-info shell">
+          <div class="bridge-status" hidden>
+            <div class="bridge-status-label">
+              <span id="bridge-phase">Foundation</span>
+              <span id="bridge-percent" aria-hidden="true">0%</span>
+            </div>
+            <progress id="bridge-progress" aria-label="Bridge sequence progress" max="100" value="0"></progress>
+          </div>
+          <ul class="viewer-legend" aria-label="Bridge components by colour">
+            <li class="legend-deck">Deck</li>
+            <li class="legend-joints">Joints</li>
+            <li class="legend-bracing">Diagonal bracing</li>
+          </ul>
+        </div>
       </div>
     </section>
 
@@ -241,34 +272,6 @@
     <p class="eyebrow section-label" id="dialog-tag"></p>
     <h2 id="dialog-title"></h2>
     <p id="dialog-intro"></p>
-
-    <section class="bridge-demo" id="bridge-demo" aria-labelledby="bridge-demo-title" hidden>
-      <div class="bridge-demo-heading">
-        <div>
-          <h3 id="bridge-demo-title">Inspect the truss</h3>
-          <p>Illustrative timber truss on a workshop bench.</p>
-        </div>
-        <button class="button button-outline" id="bridge-toggle" type="button" aria-controls="bridge-interactive" aria-expanded="false">Explore in 3D</button>
-      </div>
-      <div class="bridge-interactive" id="bridge-interactive" hidden>
-        <canvas id="bridge-canvas" role="img" aria-label="Interactive 3D truss bridge with two side trusses, a deck and cross bracing. Use the rotation buttons to change the view."></canvas>
-        <div class="viewer-toolbar">
-          <p id="bridge-help">Drag to rotate, or use the buttons.</p>
-          <div class="viewer-controls" aria-label="Bridge view controls" role="group">
-            <button type="button" data-view="left" aria-label="Rotate bridge left">Left</button>
-            <button type="button" data-view="right" aria-label="Rotate bridge right">Right</button>
-            <button type="button" data-view="reset">Reset view</button>
-          </div>
-        </div>
-        <ul class="viewer-legend" aria-label="Bridge components by colour">
-          <li class="legend-deck">Deck</li>
-          <li class="legend-joints">Joints</li>
-          <li class="legend-bracing">Diagonal bracing</li>
-        </ul>
-      </div>
-      <img id="bridge-preview" src="assets/bridge-model.webp" loading="lazy" width="1536" height="1024" alt="Illustration of a wooden truss bridge model">
-      <p id="bridge-error" role="status" hidden>The 3D viewer is unavailable in this browser.</p>
-    </section>
 
     <h3 id="dialog-subtitle"></h3>
     <p id="dialog-detail"></p>

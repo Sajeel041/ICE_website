@@ -2,13 +2,92 @@
 
 const workshopLight = normalise([-0.56, 0.81, 0.32]);
 
+const bridgeTimeline = {
+  foundation: { start: 0, end: 0.10, label: "Foundation" },
+  deck: { start: 0.10, end: 0.25, label: "Deck" },
+  frame: { start: 0.25, end: 0.45, label: "Truss Assembly" },
+  bracing: { start: 0.45, end: 0.55, label: "Diagonal Bracing" },
+  joints: { start: 0.55, end: 0.60, label: "Joints and Connectors" },
+  inspection: { start: 0.60, end: 0.65, label: "Structural Inspection" },
+  rotation: { start: 0.65, end: 1, label: "360° Inspection" },
+};
+
+function clampProgress(value) {
+  return Math.max(0, Math.min(1, value));
+}
+
+function stageProgress(progress, { start, end }) {
+  return clampProgress((progress - start) / (end - start));
+}
+
+function initBridgeSequence() {
+  const section = document.getElementById("bridge-challenge");
+  const scene = section.querySelector(".bridge-scene");
+  const canvas = document.getElementById("bridge-canvas");
+  const status = section.querySelector(".bridge-status");
+  const hint = section.querySelector(".bridge-scroll-hint");
+  const phase = document.getElementById("bridge-phase");
+  const percent = document.getElementById("bridge-percent");
+  const bar = document.getElementById("bridge-progress");
+  const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const viewer = createBridgeViewer(canvas);
+  if (!viewer) return;
+
+  document.getElementById("bridge-preview").hidden = true;
+  canvas.hidden = false;
+
+  const stages = Object.values(bridgeTimeline);
+  let frame;
+  let previousProgress;
+
+  function update() {
+    frame = undefined;
+    const top = Number.parseFloat(getComputedStyle(scene).top) || 0;
+    const bounds = section.getBoundingClientRect();
+    const distance = bounds.height - scene.getBoundingClientRect().height;
+    const progress = motion.matches || distance <= 0
+      ? 1
+      : clampProgress((top - bounds.top) / distance);
+    if (progress === previousProgress) return;
+    previousProgress = progress;
+    viewer.seek(progress);
+
+    const stage = stages.find(({ end }) => progress < end);
+    const label = stage?.label ?? "Inspection Complete";
+    if (phase.textContent !== label) phase.textContent = label;
+    const rounded = Math.round(progress * 100);
+    if (bar.value !== rounded) {
+      bar.value = rounded;
+      percent.textContent = rounded + "%";
+    }
+  }
+
+  function schedule() {
+    if (frame === undefined) frame = window.requestAnimationFrame(update);
+  }
+
+  function setMotion() {
+    section.classList.toggle("has-scroll-sequence", !motion.matches);
+    hint.hidden = status.hidden = motion.matches;
+    update();
+  }
+
+  window.addEventListener("scroll", schedule, { passive: true });
+  window.addEventListener("resize", schedule);
+  motion.addEventListener("change", setMotion);
+  if ("ResizeObserver" in window) new ResizeObserver(schedule).observe(section);
+  setMotion();
+}
+
 function createBridgeViewer(canvas) {
   const context = canvas.getContext("2d");
   if (!context) return null;
 
   const defaultView = { yaw: -0.42, pitch: 0.38 };
   const view = { ...defaultView };
-  const faces = buildBridge().flatMap(beamFaces);
+  const members = prepareBridgeMembers();
+  let progress = 1;
+  let rotation = 0;
   const benchTop = -1.16;
   const bench = beamFaces({
     start: [-8.2, benchTop - 0.13, 0],
@@ -24,14 +103,15 @@ function createBridgeViewer(canvas) {
     const { width, height } = canvas.getBoundingClientRect();
     if (!width || !height) return;
 
-    const resolution = Math.min(window.devicePixelRatio || 1, 2);
+    const resolution = Math.min(window.devicePixelRatio || 1, width < 640 ? 1.5 : 2);
     const pixelWidth = Math.round(width * resolution);
     const pixelHeight = Math.round(height * resolution);
     if (canvas.width !== pixelWidth) canvas.width = pixelWidth;
     if (canvas.height !== pixelHeight) canvas.height = pixelHeight;
     context.setTransform(resolution, 0, 0, resolution, 0, 0);
 
-    const scale = Math.min(width / 17.3, height / 8.6);
+    const scale = Math.min(width / (width < 640 ? 14 : 17.3), height / 9.4);
+    const faces = members.flatMap((member) => poseBridgeMember(member, progress, rotation));
     const { yaw, pitch } = view;
     const cosYaw = Math.cos(yaw);
     const sinYaw = Math.sin(yaw);
@@ -80,6 +160,7 @@ function createBridgeViewer(canvas) {
 
       for (const face of projected) {
         polygon(face.points);
+        context.globalAlpha = face.opacity ?? 1;
         context.fillStyle = face.color;
         context.fill();
         if (face.grain) drawGrain(face);
@@ -88,6 +169,7 @@ function createBridgeViewer(canvas) {
         polygon(face.points);
         context.stroke();
       }
+      context.globalAlpha = 1;
     }
 
     function drawGrain({ points, grain, seed }) {
@@ -143,7 +225,7 @@ function createBridgeViewer(canvas) {
   }
 
   canvas.addEventListener("pointerdown", (event) => {
-    if (!event.isPrimary || event.button !== 0) return;
+    if (progress !== 1 || event.pointerType !== "mouse" || !event.isPrimary || event.button !== 0) return;
     drag = { pointer: event.pointerId, x: event.clientX, y: event.clientY };
     canvas.setPointerCapture(event.pointerId);
   });
@@ -170,16 +252,85 @@ function createBridgeViewer(canvas) {
   }
 
   return {
-    draw,
-    rotate(direction) {
-      view.yaw += direction * Math.PI / 8;
-      draw();
-    },
-    reset() {
+    seek(value) {
+      progress = value;
+      rotation = stageProgress(progress, bridgeTimeline.rotation) * 2 * Math.PI;
+      // Keep the original pose exact at both ends of the turn.
+      if (value === 1) rotation = 0;
+      drag = undefined;
       Object.assign(view, defaultView);
+      canvas.classList.toggle("can-inspect", value === 1);
       draw();
     },
   };
+}
+
+function prepareBridgeMembers() {
+  const beams = buildBridge();
+  const groups = beams.reduce((groups, beam) => {
+    (groups[beam.group] ??= []).push(beam);
+    return groups;
+  }, {});
+  const poses = new Map();
+
+  for (const [group, parts] of Object.entries(groups)) {
+    const stage = bridgeTimeline[group];
+    parts.sort((a, b) => (a.start[0] + a.finish[0]) - (b.start[0] + b.finish[0]));
+    parts.forEach((beam, index) => {
+      const stagger = parts.length > 1 ? index / (parts.length - 1) : 0;
+      const start = stage.start + (stage.end - stage.start) * 0.64 * stagger;
+      const end = start + (stage.end - stage.start) * 0.36;
+      const pivot = beam.start.map((coordinate, axis) => (coordinate + beam.finish[axis]) / 2);
+      poses.set(beam, { start, end, pivot, group, faces: beamFaces(beam) });
+    });
+  }
+  return beams.map((beam) => poses.get(beam));
+}
+
+function poseBridgeMember(member, progress, rotation) {
+  const installed = stageProgress(progress, member);
+  if (installed === 0) return [];
+  if (installed === 1 && rotation === 0) return member.faces;
+
+  const { pivot, group } = member;
+  const remaining = 1 - installed * installed * (3 - 2 * installed);
+  const side = Math.sign(pivot[2] || 1);
+  const lift = (group === "foundation" ? 0.75 : 1.55) * remaining;
+  const slide = (group === "deck" ? 0.35 : 0.85) * side * remaining;
+  const tilt = (group === "foundation" ? 0 : 0.23 * side) * remaining;
+  const cosTilt = Math.cos(tilt);
+  const sinTilt = Math.sin(tilt);
+  const cosYaw = Math.cos(rotation);
+  const sinYaw = Math.sin(rotation);
+  const highlight = 0.11 * Math.sin(installed * Math.PI);
+
+  function rotate([x, y, z]) {
+    return [x * cosYaw + z * sinYaw, y, -x * sinYaw + z * cosYaw];
+  }
+
+  function place([x, y, z]) {
+    const dy = y - pivot[1];
+    const dz = z - pivot[2];
+    return rotate([
+      x,
+      pivot[1] + dy * cosTilt - dz * sinTilt + lift,
+      pivot[2] + dy * sinTilt + dz * cosTilt + slide,
+    ]);
+  }
+
+  return member.faces.map((face) => {
+    const [x, y, z] = face.normal;
+    const normal = rotate([x, y * cosTilt - z * sinTilt, y * sinTilt + z * cosTilt]);
+    const vertices = face.vertices.map(place);
+    return {
+      ...face,
+      vertices,
+      normal,
+      shadowVertices: face.shadowVertices === face.vertices ? vertices : [...vertices].reverse(),
+      color: litColor(face.material, normal, highlight),
+      opacity: Math.min(1, installed * 5),
+    };
+  });
 }
 
 function buildBridge() {
@@ -190,8 +341,8 @@ function buildBridge() {
   const joints = { color: "#a6aa99" };
   const foundation = { color: "#929487" };
 
-  function beam(start, finish, width, depth, material) {
-    beams.push({ start, finish, width, depth, material });
+  function beam(start, finish, width, depth, material, group = "frame") {
+    beams.push({ start, finish, width, depth, material, group });
   }
 
   const bottom = [-6, -4, -2, 0, 2, 4, 6];
@@ -203,12 +354,12 @@ function buildBridge() {
     beam([-6, 0, z], [6, 0, z], 0.23, 0.25, timber);
     beam([-5, height, z], [5, height, z], 0.20, 0.22, timber);
     top.forEach((x, index) => {
-      beam([bottom[index], 0, z], [x, height, z], 0.17, 0.18, bracing);
-      beam([bottom[index + 1], 0, z], [x, height, z], 0.17, 0.18, bracing);
-      beam([x - 0.12, height, z], [x + 0.12, height, z], 0.26, 0.27, joints);
+      beam([bottom[index], 0, z], [x, height, z], 0.17, 0.18, bracing, "bracing");
+      beam([bottom[index + 1], 0, z], [x, height, z], 0.17, 0.18, bracing, "bracing");
+      beam([x - 0.12, height, z], [x + 0.12, height, z], 0.26, 0.27, joints, "joints");
     });
     for (const x of bottom) {
-      beam([x - 0.13, 0, z], [x + 0.13, 0, z], 0.28, 0.29, joints);
+      beam([x - 0.13, 0, z], [x + 0.13, 0, z], 0.28, 0.29, joints, "joints");
     }
   }
 
@@ -217,14 +368,14 @@ function buildBridge() {
   }
   for (let index = 0; index + 1 < top.length; index++) {
     const side = index % 2 ? halfWidth : -halfWidth;
-    beam([top[index], height, side], [top[index + 1], height, -side], 0.11, 0.11, timber);
+    beam([top[index], height, side], [top[index + 1], height, -side], 0.11, 0.11, timber, "bracing");
   }
   for (let index = 0; index < 31; index++) {
     const x = -6 + index * 0.4;
-    beam([x, -0.14, -halfWidth], [x, -0.14, halfWidth], 0.365, 0.13, deck);
+    beam([x, -0.14, -halfWidth], [x, -0.14, halfWidth], 0.365, 0.13, deck, "deck");
   }
   for (const x of [-5.7, 5.7]) {
-    beam([x, -0.71, -1.75], [x, -0.71, 1.75], 1.05, 0.90, foundation);
+    beam([x, -0.71, -1.75], [x, -0.71, 1.75], 1.05, 0.90, foundation, "foundation");
   }
 
   return beams;
@@ -257,12 +408,12 @@ function beamFaces({ start, finish, width, depth, material }) {
     let normal = normalise(cross(difference(edge, origin), difference(diagonal, origin)));
     const outward = dot(normal, difference(origin, center)) > 0;
     if (!outward) normal = normal.map((coordinate) => -coordinate);
-    const light = 0.64 + 0.49 * Math.max(0, dot(normal, workshopLight));
     return {
       vertices,
       shadowVertices: outward ? vertices : [...vertices].reverse(),
       normal,
-      color: shade(material.color, light),
+      material,
+      color: litColor(material, normal),
       grain: index < 4 ? material.grain : 0,
       seed: dot(origin, [3.7, 7.1, 5.3]),
     };
@@ -271,6 +422,11 @@ function beamFaces({ start, finish, width, depth, material }) {
 
 function interpolatePoint(from, to, fraction) {
   return { x: from.x + (to.x - from.x) * fraction, y: from.y + (to.y - from.y) * fraction };
+}
+
+function litColor(material, normal, highlight = 0) {
+  const light = 0.64 + 0.49 * Math.max(0, dot(normal, workshopLight));
+  return shade(material.color, light + highlight);
 }
 
 function shade(hex, intensity) {
