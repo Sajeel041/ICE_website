@@ -146,11 +146,9 @@
 .closing { background: #282b50; }
 .closing h2 { font-family: "Instrument Serif", Georgia, serif; font-style: italic; font-weight: 400; }
 dialog { border-radius: 1.5rem; box-shadow: 0 25px 80px #25254135; }
-dialog:has(#bridge-demo:not([hidden])) { width: min(54rem, 100% - 2rem); }
 .dialog-close { border-radius: 50%; background: #edebf8; }
-.bridge-demo, .dialog-note { border-radius: .85rem; overflow: hidden; }
+.dialog-note { border-radius: .85rem; overflow: hidden; }
 .viewer-controls button { border-radius: 5rem; }
-#bridge-canvas { height: clamp(13rem, 42vw, 25rem); }
 #toast { border-radius: 1rem; }
 
 @media (prefers-reduced-motion: no-preference) {

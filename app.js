@@ -9,14 +9,6 @@ const modules = {
     detail: "Bring a question from class. The workshop is a chance to ask practising engineers how they approach design, construction and project management.",
     note: "Speakers, topics and session timings are awaiting announcement.",
   },
-  bridge: {
-    tag: "Bridge challenge",
-    title: "Load the Bridge",
-    intro: "Design and build a bridge from the materials provided, then see how much load it can carry.",
-    subtitle: "The challenge",
-    detail: "Plan the joints and build your model from the supplied materials. Each team puts its bridge through a live load test.",
-    note: "Team size, materials, dimensions and scoring details will be shared with registered participants before the event.",
-  },
   egg: {
     tag: "Egg-drop challenge",
     title: "Drop the Egg",
@@ -28,20 +20,7 @@ const modules = {
 };
 
 const dialog = document.getElementById("module-dialog");
-const bridgeDemo = document.getElementById("bridge-demo");
-const bridgeToggle = document.getElementById("bridge-toggle");
-const bridgeInteractive = document.getElementById("bridge-interactive");
-const bridgePreview = document.getElementById("bridge-preview");
-const bridgeError = document.getElementById("bridge-error");
-let bridgeViewer;
 let moduleTrigger;
-
-function setBridgeExpanded(expanded) {
-  bridgeToggle.setAttribute("aria-expanded", String(expanded));
-  bridgeToggle.textContent = expanded ? "Show image" : "Explore in 3D";
-  bridgeInteractive.hidden = !expanded;
-  bridgePreview.hidden = expanded;
-}
 
 document.querySelectorAll("[data-module]").forEach((button) => {
   button.addEventListener("click", () => {
@@ -51,12 +30,8 @@ document.querySelectorAll("[data-module]").forEach((button) => {
     }
 
     moduleTrigger = button;
-    bridgeDemo.hidden = button.dataset.module !== "bridge";
-    bridgeError.hidden = true;
-    setBridgeExpanded(false);
     dialog.showModal();
     dialog.scrollTop = 0;
-    if (button.hasAttribute("data-show-model")) openBridgeViewer();
   });
 });
 
@@ -71,28 +46,45 @@ dialog.addEventListener("click", (event) => {
   }
 });
 
-function openBridgeViewer() {
-  bridgeViewer ??= createBridgeViewer(document.getElementById("bridge-canvas"));
-  if (!bridgeViewer) {
-    bridgeError.hidden = false;
-    return;
+const bridgeTrack = document.querySelector(".bridge-track");
+if (bridgeTrack) {
+  const bridgeHint = bridgeTrack.querySelector(".bridge-scroll-hint");
+  const bridgePreview = document.getElementById("bridge-preview");
+  // Reserve the scroll range before loading the renderer or textures.
+  bridgeTrack.classList.toggle("has-scroll-sequence", !matchMedia("(prefers-reduced-motion: reduce)").matches);
+  bridgePreview.hidden = true;
+  bridgeHint.hidden = false;
+  bridgeHint.textContent = "Loading the workshop…";
+
+  const showBridgeFallback = () => {
+    bridgeTrack.classList.remove("has-scroll-sequence");
+    bridgePreview.hidden = false;
+    bridgeHint.textContent = "The workshop could not load. Reload to try again.";
+  };
+  const loadBridge = () => {
+    if (location.protocol === "file:") {
+      const script = document.createElement("script");
+      script.src = "./vendor/bridge-local.js";
+      script.addEventListener("error", showBridgeFallback, { once: true });
+      document.head.append(script);
+    } else {
+      import("./bridge-viewer.js").then(({ startBridge }) => startBridge()).catch((error) => {
+        console.warn("The bridge workshop could not load.", error);
+        showBridgeFallback();
+      });
+    }
+  };
+  if ("IntersectionObserver" in window) {
+    const bridgeObserver = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      bridgeObserver.disconnect();
+      loadBridge();
+    }, { rootMargin: "700px 0px" });
+    bridgeObserver.observe(bridgeTrack);
+  } else {
+    loadBridge();
   }
-
-  setBridgeExpanded(true);
-  bridgeViewer.reset();
 }
-
-bridgeToggle.addEventListener("click", () => {
-  if (bridgeInteractive.hidden) openBridgeViewer();
-  else setBridgeExpanded(false);
-});
-
-document.querySelectorAll("[data-view]").forEach((button) => {
-  button.addEventListener("click", () => {
-    if (button.dataset.view === "reset") bridgeViewer.reset();
-    else bridgeViewer.rotate(button.dataset.view === "left" ? -1 : 1);
-  });
-});
 
 const mobileMenu = document.querySelector(".mobile-nav");
 mobileMenu.querySelectorAll("a").forEach((link) => {
