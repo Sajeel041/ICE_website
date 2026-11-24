@@ -1,5 +1,5 @@
 import {
-  ACESFilmicToneMapping, PCFShadowMap, PerspectiveCamera, Scene, Vector3, WebGLRenderer,
+  ACESFilmicToneMapping, PCFShadowMap, PerspectiveCamera, PMREMGenerator, Scene, Vector3, WebGLRenderer,
 } from "./vendor/three.module.min.js";
 import { bridgeTimeline, clampProgress, createBridgeModel, smoothstep } from "./bridge-model.js";
 import { createWorkshop, loadWorkshopTextures } from "./bridge-workshop.js";
@@ -7,6 +7,7 @@ import { createWorkshop, loadWorkshopTextures } from "./bridge-workshop.js";
 const track = document.querySelector(".bridge-track");
 const frame = track.querySelector(".bridge-scene");
 const canvas = document.getElementById("bridge-canvas");
+const stage = canvas.parentElement;
 const preview = document.getElementById("bridge-preview");
 const hint = document.querySelector(".bridge-scroll-hint");
 const motionToggle = document.querySelector(".bridge-motion-toggle");
@@ -110,7 +111,9 @@ function releaseScene(scene, textures) {
   scene.clear();
 }
 
-async function createViewer(signal, resolveAsset) {
+async function createViewer({ signal, getAsset, waitForTurn, viewport }) {
+  await waitForTurn();
+  let start = performance.now();
   const lowMemory = navigator.deviceMemory <= 4;
   const compact = lowMemory || matchMedia("(pointer: coarse), (max-width: 720px)").matches;
   const attributes = { alpha: false, antialias: !lowMemory, powerPreference: "default" };
@@ -118,6 +121,7 @@ async function createViewer(signal, resolveAsset) {
   if (!context) return null;
 
   const renderer = new WebGLRenderer({ canvas, context, ...attributes });
+  performance.measure("bridge:renderer", { start });
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = PCFShadowMap;
   renderer.shadowMap.autoUpdate = false;
@@ -125,52 +129,121 @@ async function createViewer(signal, resolveAsset) {
   renderer.toneMappingExposure = 1.02;
 
   let textures;
+  let environment;
   const scene = new Scene();
+  function dispose() {
+    releaseScene(scene, textures);
+    environment?.dispose();
+    renderer.dispose();
+  }
   try {
-    textures = await loadWorkshopTextures(Math.min(renderer.capabilities.getMaxAnisotropy(), compact ? 2 : 8), resolveAsset);
-    if (signal.aborted) {
-      Object.values(textures).forEach((texture) => texture.dispose());
-      renderer.dispose();
-      return null;
-    }
+    start = performance.now();
+    textures = await loadWorkshopTextures(Math.min(renderer.capabilities.getMaxAnisotropy(), compact ? 2 : 8), getAsset, waitForTurn);
+    performance.measure("bridge:texture-prep", { start });
+    await waitForTurn();
+    start = performance.now();
     const workshop = createWorkshop(scene, textures, compact ? "compact" : "full");
+    performance.measure("bridge:workshop-geometry", { start });
+    await waitForTurn();
+    start = performance.now();
     const bridge = createBridgeModel(workshop.geometryFor, workshop.materials);
     scene.add(bridge.group);
+    performance.measure("bridge:bridge-geometry", { start });
 
     const camera = new PerspectiveCamera(37, 1, 0.25, 250);
     const focus = new Vector3();
+    const budget = lowMemory ? 820_000 : compact ? 1_100_000 : 2_650_000;
+    const dprLimit = lowMemory ? 1.12 : compact ? 1.32 : 1.65;
+    let quality = 1;
+    let slowFrames = 0, lastDraw = -Infinity;
     let installed;
     let assembled = 0;
+    function resize(width, height) {
+      const dpr = Math.min(devicePixelRatio || 1, dprLimit, Math.sqrt(budget / (width * height))) * quality;
+      renderer.setDrawingBufferSize(width, height, dpr);
+      camera.aspect = width / height;
+      camera.setViewOffset(width, height, 0, height * lensOffset(camera.aspect), width, height);
+    }
+
+    await waitForTurn();
+    start = performance.now();
+    const pmrem = new PMREMGenerator(renderer);
+    try {
+      environment = pmrem.fromEquirectangular(textures.room);
+    } finally {
+      pmrem.dispose();
+    }
+    scene.background = scene.environment = environment.texture;
+    textures.room.dispose();
+    delete textures.room;
+    performance.measure("bridge:pmrem", { start });
+
+    await waitForTurn();
+    const compilationStarted = performance.now();
+    bridge.seek(1);
+    renderer.compile(scene, camera);
+    performance.measure("bridge:shader-submit", { start: compilationStarted });
+    const maps = Object.values(textures);
+    for (let index = 0; index < maps.length; index += 2) {
+      await waitForTurn();
+      start = performance.now();
+      maps.slice(index, index + 2).forEach((texture) => renderer.initTexture(texture));
+      performance.measure("bridge:texture-upload", { start });
+    }
+    // Three r179's compileAsync polls indefinitely and cannot be cancelled on context loss.
+    // Use the same readiness check with a bounded wait and keep the lifecycle responsive.
+    if (context.getExtension("KHR_parallel_shader_compile")) {
+      while (performance.now() - compilationStarted < 1200 && renderer.info.programs.some((program) => !program.isReady())) {
+        await new Promise((resolve) => setTimeout(resolve, 16));
+        if (document.hidden) await waitForTurn();
+        signal.throwIfAborted();
+      }
+    }
+    performance.measure("bridge:shaders", { start: compilationStarted });
+    await waitForTurn();
+    if (!viewport.visible) {
+      start = performance.now();
+      renderer.setDrawingBufferSize(1, 1, 1);
+      camera.aspect = frame.clientWidth / Math.max(frame.clientHeight, 1);
+      camera.updateProjectionMatrix();
+      positionCamera(camera, focus, 1, { yaw: 0, pitch: 0 });
+      renderer.shadowMap.needsUpdate = true;
+      renderer.render(scene, camera);
+      performance.measure("bridge:warm-draw", { start });
+    }
+    renderer.shadowMap.needsUpdate = true;
     return {
-      resize(width, height) {
-        const budget = compact ? 1_100_000 : 2_650_000;
-        const dpr = Math.min(devicePixelRatio || 1, compact ? 1.32 : 1.65, Math.sqrt(budget / (width * height)));
-        renderer.setPixelRatio(dpr);
-        renderer.setSize(width, height, false);
-        camera.aspect = width / height;
-        camera.setViewOffset(width, height, 0, height * lensOffset(camera.aspect), width, height);
-      },
-      draw(progress, drag) {
+      resize,
+      draw(progress, drag, now) {
+        const start = performance.now();
         const assembly = Math.min(progress, constructionEnd);
         if (assembly !== installed) {
           installed = assembly;
-          assembled = bridge.seek(assembly);
+          const result = bridge.seek(assembly);
+          assembled = result.assembled;
           workshop.seek(assembly);
-          renderer.shadowMap.needsUpdate = true;
+          if (result.changed) renderer.shadowMap.needsUpdate = true;
         }
         positionCamera(camera, focus, progress, drag);
         renderer.render(scene, camera);
-        return assembled;
+        const interval = now - lastDraw;
+        lastDraw = now;
+        if (quality === 1) {
+          const slow = performance.now() - start > 25 || (interval > 27 && interval < 120);
+          slowFrames = slow ? slowFrames + 1 : Math.max(0, slowFrames - 1);
+          if (slowFrames >= 9) {
+            quality = 0.82;
+            performance.mark("bridge:quality-reduced");
+            return { assembled, refresh: true };
+          }
+        }
+        return { assembled, refresh: false };
       },
       memberCount: bridge.memberCount,
-      dispose() {
-        releaseScene(scene, textures);
-        renderer.dispose();
-      },
+      dispose,
     };
   } catch (error) {
-    releaseScene(scene, textures);
-    renderer.dispose();
+    dispose();
     throw error;
   }
 }
@@ -206,9 +279,10 @@ function createDebugOverlay() {
   };
 }
 
-export async function startBridge(resolveAsset = (name) => new URL("./assets/bridge-workshop/" + name, document.baseURI).href) {
-  const lifecycle = new AbortController();
-  const options = { signal: lifecycle.signal };
+export async function startBridge({ viewport, lifecycle, waitForTurn, getAsset }) {
+  const { signal } = lifecycle;
+  const options = { signal };
+  const init = performance.now();
   let viewer;
   let resize;
   let raf = 0;
@@ -216,6 +290,8 @@ export async function startBridge(resolveAsset = (name) => new URL("./assets/bri
   let painted;
   let lastTick = 0;
   let dirty = true;
+  let layout;
+  let firstFrame = false;
   let drag;
   let assembled = 0;
   let optIn = false;
@@ -224,54 +300,66 @@ export async function startBridge(resolveAsset = (name) => new URL("./assets/bri
 
   function stop(message) {
     lifecycle.abort();
-    resize?.disconnect();
-    cancelAnimationFrame(raf);
-    viewer?.dispose();
-    debug?.remove();
     track.classList.remove("has-scroll-sequence");
     canvas.hidden = status.hidden = motionToggle.hidden = true;
-    preview.hidden = false;
-    if (message) hint.textContent = message;
-    hint.hidden = !message;
+    stage.classList.remove("is-live");
+    preview.removeAttribute("aria-hidden");
+    hint.textContent = message;
+    hint.hidden = false;
   }
 
-  window.addEventListener("pagehide", (event) => {
-    if (!event.persisted) stop();
-  }, options);
   canvas.addEventListener("webglcontextlost", () => {
     stop("The 3D workshop was interrupted. Reload to try again.");
   }, options);
+  signal.addEventListener("abort", () => {
+    resize?.disconnect();
+    cancelAnimationFrame(raf);
+    viewer?.dispose();
+    viewer = undefined;
+    debug?.remove();
+  }, { once: true });
 
   let failure = "This browser does not have WebGL 2 available.";
   try {
-    viewer = await createViewer(lifecycle.signal, resolveAsset);
+    viewer = await createViewer({ signal, getAsset, waitForTurn, viewport });
   } catch (error) {
+    if (signal.aborted) return;
     console.warn("The bridge workshop could not start.", error);
     failure = "The workshop could not load. Reload to try again.";
   }
-  if (lifecycle.signal.aborted) return;
+  if (signal.aborted) {
+    viewer?.dispose();
+    return;
+  }
   if (!viewer) {
     stop(failure);
     return;
   }
+  performance.mark("bridge:scene-ready");
+  performance.measure("bridge:scene-init", { start: init, end: "bridge:scene-ready" });
   debug = createDebugOverlay();
 
   function schedule() {
-    if (!raf) raf = requestAnimationFrame(tick);
+    if (!raf && viewport.visible && !document.hidden) raf = requestAnimationFrame(tick);
   }
 
   function tick(now) {
     raf = 0;
-    const panel = frame.getBoundingClientRect();
-    const bounds = track.getBoundingClientRect();
-    const travel = bounds.height - panel.height;
-    const scrolled = -bounds.top;
+    if (!viewport.visible || document.hidden) return;
+    if (dirty) {
+      const panel = frame.getBoundingClientRect();
+      const bounds = track.getBoundingClientRect();
+      if (!panel.width || !panel.height) return;
+      layout = { top: bounds.top + scrollY, travel: bounds.height - panel.height };
+      viewer.resize(panel.width, panel.height);
+    }
+    const { top, travel } = layout;
+    const scrolled = scrollY - top;
     // Fractional viewport units can place the end between two scroll pixels.
     const active = track.classList.contains("has-scroll-sequence");
     const target = !active ? 1 : travel <= 0 ? 0 : scrolled >= travel - 1 ? 1 : clampProgress(scrolled / travel);
-    const visible = panel.bottom > 0 && panel.top < innerHeight && panel.width > 0 && panel.height > 0;
     const delta = target - shown;
-    const jump = shown === undefined || !visible || target === 0 || target === 1 || Math.abs(delta) > 0.12;
+    const jump = shown === undefined || target === 0 || target === 1 || Math.abs(delta) > 0.12;
     const elapsed = Math.min(40, Math.max(14, now - lastTick));
     shown = jump || Math.abs(delta) < 0.00016 ? target : shown + delta * (1 - Math.exp(-elapsed / 48));
     lastTick = now;
@@ -280,13 +368,25 @@ export async function startBridge(resolveAsset = (name) => new URL("./assets/bri
       drag = undefined;
       angle.yaw = angle.pitch = 0;
     }
-    if (visible && (dirty || shown !== painted)) {
-      if (dirty) viewer.resize(panel.width, panel.height);
-      assembled = viewer.draw(shown, angle);
+    if (dirty || shown !== painted) {
+      const draw = viewer.draw(shown, angle, now);
+      assembled = draw.assembled;
       painted = shown;
       dirty = false;
-      canvas.hidden = false;
-      preview.hidden = true;
+      if (draw.refresh) {
+        updateSize();
+      }
+      if (!firstFrame) {
+        canvas.hidden = false;
+        stage.classList.add("is-live");
+        preview.setAttribute("aria-hidden", "true");
+        firstFrame = true;
+        requestAnimationFrame(() => {
+          if (signal.aborted) return;
+          performance.mark("bridge:first-frame");
+          performance.measure("bridge:enter-to-first-frame", "bridge:entered", "bridge:first-frame");
+        });
+      }
     }
     canvas.classList.toggle("can-inspect", shown === 1);
     const label = bridgeTimeline.find(({ end }) => shown < end)?.label ?? "Inspection complete";
@@ -298,10 +398,10 @@ export async function startBridge(resolveAsset = (name) => new URL("./assets/bri
     }
     debug?.update({
       progress: shown, target, label, assembled, total: viewer.memberCount,
-      pinned: active && travel > 0 && scrolled >= 0 && scrolled < travel && Math.abs(panel.top) < 1,
+      pinned: active && travel > 0 && scrolled >= 0 && scrolled < travel,
       active, travel,
     });
-    if (visible && shown !== target) schedule();
+    if (shown !== target) schedule();
   }
 
   function updateSize() {
@@ -317,7 +417,18 @@ export async function startBridge(resolveAsset = (name) => new URL("./assets/bri
     motionToggle.hidden = !motion.matches;
     motionToggle.textContent = optIn ? "Stop scroll animation" : "Play scroll animation";
     shown = undefined;
-    schedule();
+    updateSize();
+  }
+
+  function updateVisibility() {
+    if (viewport.visible && !document.hidden) {
+      shown = undefined;
+      updateSize();
+    } else {
+      cancelAnimationFrame(raf);
+      raf = 0;
+      drag = undefined;
+    }
   }
 
   canvas.addEventListener("pointerdown", (event) => {
@@ -338,6 +449,9 @@ export async function startBridge(resolveAsset = (name) => new URL("./assets/bri
 
   window.addEventListener("scroll", schedule, { ...options, passive: true });
   window.addEventListener("resize", updateSize, options);
+  window.addEventListener("pageshow", updateVisibility, options);
+  viewport.addEventListener("change", updateVisibility, options);
+  document.addEventListener("visibilitychange", updateVisibility, options);
   motion.addEventListener("change", () => {
     optIn = false;
     updateMotion();
@@ -350,6 +464,8 @@ export async function startBridge(resolveAsset = (name) => new URL("./assets/bri
   if ("ResizeObserver" in window) {
     resize = new ResizeObserver(updateSize);
     resize.observe(frame);
+    resize.observe(track);
+    resize.observe(document.querySelector("main"));
   }
   updateMotion();
 }

@@ -7,26 +7,6 @@
 
   const motion = matchMedia("(prefers-reduced-motion: reduce)");
   if (motion.matches || !motion.addEventListener || !("inert" in HTMLElement.prototype)) return;
-  const replay = new URLSearchParams(location.search).get("intro") === "1";
-  const sessionKey = "ice-gik.intro.seen";
-  const navigationType = performance.getEntriesByType("navigation")[0]?.type;
-  const localOpen = location.protocol === "file:" && navigationType === "navigate";
-  if (!replay && !localOpen && navigationType !== "reload") {
-    if (history.state?.[sessionKey]) return;
-    try {
-      if (sessionStorage.getItem(sessionKey)) return;
-    } catch { /* The intro can play without storage access. */ }
-  }
-
-  function rememberVisit() {
-    try {
-      sessionStorage.setItem(sessionKey, "1");
-    } catch {
-      // Some browsers restrict sessionStorage for files. History state survives a refresh.
-      try { history.replaceState({ ...history.state, [sessionKey]: true }, ""); } catch { /* Storage is optional. */ }
-    }
-  }
-
   // Cue times are in milliseconds. Change speed to retime the entire sequence.
   const speed = 1;
   const cue = { attract: 600, form: 1400, hold: 2800, charge: 3200, burst: 3800,
@@ -57,7 +37,11 @@
     clearTimeout(guard);
     animations.forEach(animation => animation.cancel());
     uncover();
-    logo.onerror = null;
+    if (origin !== undefined) {
+      performance.mark("ice:intro-end");
+      performance.measure("ice:intro-duration", "ice:intro-start", "ice:intro-end");
+    }
+    document.dispatchEvent(new Event("ice:intro-end"));
     document.removeEventListener("DOMContentLoaded", start);
     document.removeEventListener("click", onClick);
     document.removeEventListener("keydown", onKey);
@@ -66,22 +50,24 @@
     motion.removeEventListener("change", finish);
   }
 
-  function dismiss() {
-    rememberVisit();
-    finish();
-  }
-  function onClick(event) { if (event.target.closest?.(".intro-skip")) dismiss(); }
-  function onKey(event) { if (event.key === "Escape") dismiss(); }
+  function onClick(event) { if (event.target.closest?.(".intro-skip")) finish(); }
+  function onKey(event) { if (event.key === "Escape") finish(); }
   motion.addEventListener("change", finish);
   window.addEventListener("pagehide", finish);
   document.addEventListener("click", onClick);
   document.addEventListener("keydown", onKey);
   document.addEventListener("DOMContentLoaded", start, { once: true });
-  logo.onerror = finish;
-  logo.src = "ICE Logo Banner.jfif.jpeg";
+  logo.sizes = "min(78vw, 42rem, 156vh)";
+  logo.srcset = "assets/intro-banner-516.webp 516w, assets/intro-banner-1376.webp 1376w";
+  logo.onerror = () => {
+    logo.onerror = null;
+    logo.removeAttribute("srcset");
+    logo.src = "ICE Logo Banner.jfif.jpeg";
+  };
+  logo.src = "assets/intro-banner-1376.webp";
   root.classList.add("ice-intro-active");
 
-  let canvas, ctx, width, height, particles, origin;
+  let canvas, ctx, width, height, particles, origin, particlesPainted;
 
   function resize() {
     width = overlay.clientWidth;
@@ -100,12 +86,18 @@
       angle: Math.random() * Math.PI * 2,
       reach: .2 + Math.random() * .5,
     }));
+    for (const p of particles) {
+      p.dx = Math.cos(p.angle);
+      p.dy = Math.sin(p.angle);
+    }
+    particlesPainted = false;
   }
 
   const clamp = value => Math.min(1, Math.max(0, value));
   function drawParticles(time) {
-    ctx.clearRect(-width / 2, -height / 2, width, height);
-    if (time >= cue.form && time < cue.burst) return;
+    if (particlesPainted) ctx.clearRect(-width / 2, -height / 2, width, height);
+    particlesPainted = time < cue.form || time >= cue.burst;
+    if (!particlesPainted) return;
     const exploding = time >= cue.burst;
     const progress = exploding ? clamp((time - cue.burst) / (cue.clear - cue.burst))
       : clamp((time - cue.attract) / (cue.form - cue.attract));
@@ -115,8 +107,8 @@
       let x, y, trail, opacity;
       if (exploding) {
         const travel = (1 - (1 - progress) ** 2) * distance * p.reach;
-        x = Math.cos(p.angle) * travel;
-        y = Math.sin(p.angle) * travel;
+        x = p.dx * travel;
+        y = p.dy * travel;
         trail = .11 * (1 - progress);
         opacity = (1 - progress) ** 1.4;
       } else {
@@ -222,14 +214,16 @@
 
   function tick(now) {
     const time = (now - origin) * speed;
-    if (time >= cue.end || (time >= cue.form && !(logo.complete && logo.naturalWidth))) {
+    if (time >= cue.end) {
       finish();
       return;
     }
     if (overlay.isConnected) {
       if (time >= cue.clear) uncover();
       else {
-        if (time >= cue.entrance) root.classList.add("ice-intro-revealing");
+        if (time >= cue.entrance && !root.classList.contains("ice-intro-revealing")) {
+          root.classList.add("ice-intro-revealing");
+        }
         drawParticles(time);
       }
     }
@@ -254,9 +248,11 @@
     resize();
     frame = requestAnimationFrame(now => {
       origin = now;
+      performance.mark("ice:intro-start", { startTime: now });
+      performance.measure("ice:navigation-to-intro", { start: 0, end: "ice:intro-start" });
+      document.dispatchEvent(new Event("ice:intro-start"));
       guard = setTimeout(finish, cue.end / speed + 800);
       try { runTimeline(); } catch { return finish(); }
-      rememberVisit();
       tick(now);
     });
   }

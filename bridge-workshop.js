@@ -1,33 +1,55 @@
 import {
-  BoxGeometry, CanvasTexture, CatmullRomCurve3, CylinderGeometry, DirectionalLight,
-  EquirectangularReflectionMapping, Group, HemisphereLight, LatheGeometry, Mesh,
-  MeshBasicMaterial, MeshStandardMaterial, MirroredRepeatWrapping, PlaneGeometry,
-  SRGBColorSpace, TextureLoader, TubeGeometry, Vector2, Vector3,
+  BoxGeometry, CanvasTexture, CatmullRomCurve3, CylinderGeometry, DataTexture, DirectionalLight,
+  EquirectangularReflectionMapping, Group, HemisphereLight, InstancedMesh, LatheGeometry,
+  LinearFilter, LinearSRGBColorSpace, Matrix4, Mesh, MeshBasicMaterial, MeshStandardMaterial,
+  MirroredRepeatWrapping, PlaneGeometry, RGBAFormat, SRGBColorSpace, Texture, TubeGeometry, Vector2, Vector3,
 } from "./vendor/three.module.min.js";
 import { RGBELoader } from "./vendor/RGBELoader.js";
-import { RoundedBoxGeometry } from "./vendor/RoundedBoxGeometry.js";
 import { bridgeTimeline, smoothstep, timberTransform, worktop } from "./bridge-model.js";
 
-export async function loadWorkshopTextures(anisotropy, asset) {
-  const loader = new TextureLoader();
+export async function loadWorkshopTextures(anisotropy, getAsset, waitForTurn) {
   const names = ["birch-color", "birch-normal", "birch-surface", "bench-color", "bench-normal", "bench-surface"];
-  const jobs = names.map((name) => loader.loadAsync(asset(name + ".webp")).then((texture) => {
-    texture.wrapS = texture.wrapT = MirroredRepeatWrapping;
-    texture.anisotropy = anisotropy;
-    if (name.endsWith("-color")) texture.colorSpace = SRGBColorSpace;
+  const jobs = names.map(async (name) => {
+    const url = URL.createObjectURL(await getAsset(name + ".webp"));
+    try {
+      const start = performance.now();
+      const image = new Image();
+      image.src = url;
+      await image.decode();
+      performance.measure("bridge:decode-" + name, { start });
+      const texture = new Texture(image);
+      texture.wrapS = texture.wrapT = MirroredRepeatWrapping;
+      texture.anisotropy = anisotropy;
+      if (name.endsWith("-color")) texture.colorSpace = SRGBColorSpace;
+      texture.needsUpdate = true;
+      return texture;
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  });
+  const room = getAsset("carpentry.hdr").then(async (data) => {
+    await waitForTurn();
+    const start = performance.now();
+    const { data: pixels, width, height, type } = new RGBELoader().parse(data);
+    const texture = new DataTexture(pixels, width, height, RGBAFormat, type);
+    texture.colorSpace = LinearSRGBColorSpace;
+    texture.minFilter = texture.magFilter = LinearFilter;
+    texture.mapping = EquirectangularReflectionMapping;
+    texture.flipY = true;
+    texture.needsUpdate = true;
+    performance.measure("bridge:hdr-decode", { start });
     return texture;
-  }));
-  const results = await Promise.allSettled([...jobs, new RGBELoader().loadAsync(asset("carpentry.hdr"))]);
-  if (results.some(({ status }) => status === "rejected")) {
+  });
+  const results = await Promise.allSettled([...jobs, room]);
+  const failure = results.find(({ status }) => status === "rejected");
+  if (failure) {
     results.forEach(({ value }) => value?.dispose());
-    throw new Error("Could not load the workshop textures");
+    throw failure.reason;
   }
   return Object.fromEntries([...names, "room"].map((name, index) => [name, results[index].value]));
 }
 
 export function createWorkshop(scene, textures, quality) {
-  textures.room.mapping = EquirectangularReflectionMapping;
-  scene.background = scene.environment = textures.room;
   scene.backgroundBlurriness = 0.073;
   scene.backgroundIntensity = 0.47;
   scene.environmentIntensity = 0.54;
@@ -38,14 +60,23 @@ export function createWorkshop(scene, textures, quality) {
     const key = [length.toFixed(3), height, width, kind].join(":");
     if (geometryCache.has(key)) return geometryCache.get(key);
     const bevel = Math.min(height, width) * (kind === "stick" ? 0.25 : 0.18);
-    const geometry = new RoundedBoxGeometry(length, height, width, 1, bevel);
+    // Each box face already owns its vertices, so rounded corners and grain UVs can keep the index.
+    const geometry = new BoxGeometry(1, 1, 1, 3, 3, 3);
     const positions = geometry.attributes.position;
     const normals = geometry.attributes.normal;
     const uv = geometry.attributes.uv;
     const bench = kind === "bench";
+    const normal = new Vector3();
     for (let index = 0; index < uv.count; index++) {
-      const [x, y, z] = [positions.getX(index), positions.getY(index), positions.getZ(index)];
-      const [nx, ny, nz] = [Math.abs(normals.getX(index)), Math.abs(normals.getY(index)), Math.abs(normals.getZ(index))];
+      const sx = Math.sign(positions.getX(index));
+      const sy = Math.sign(positions.getY(index));
+      const sz = Math.sign(positions.getZ(index));
+      normal.set(positions.getX(index) - sx / 6, positions.getY(index) - sy / 6, positions.getZ(index) - sz / 6).normalize();
+      positions.setXYZ(index, (length / 2 - bevel) * sx + normal.x * bevel,
+        (height / 2 - bevel) * sy + normal.y * bevel, (width / 2 - bevel) * sz + normal.z * bevel);
+      normals.setXYZ(index, normal.x, normal.y, normal.z);
+      const x = positions.getX(index), y = positions.getY(index), z = positions.getZ(index);
+      const nx = Math.abs(normals.getX(index)), ny = Math.abs(normals.getY(index)), nz = Math.abs(normals.getZ(index));
       const end = nx > ny && nx > nz;
       const crossGrain = ny > nz ? z : y;
       const u = end ? z : x;
@@ -75,12 +106,20 @@ export function createWorkshop(scene, textures, quality) {
     bench: wood("bench", 0xa39582, 1, 0.63),
   };
 
+  const benchParts = new Map();
+  const unitScale = new Vector3(1, 1, 1);
   function timber(beam, parent = scene) {
     const { position, rotation, length } = timberTransform(beam);
-    const part = new Mesh(geometryFor(length, beam.height, beam.width, beam.kind), materials[beam.kind]);
+    const geometry = geometryFor(length, beam.height, beam.width, beam.kind);
+    if (beam.kind === "bench") {
+      if (!benchParts.has(geometry)) benchParts.set(geometry, []);
+      benchParts.get(geometry).push(new Matrix4().compose(position, rotation, unitScale));
+      return;
+    }
+    const part = new Mesh(geometry, materials[beam.kind]);
     part.position.copy(position);
     part.quaternion.copy(rotation);
-    part.castShadow = beam.kind !== "bench";
+    part.castShadow = true;
     part.receiveShadow = true;
     parent.add(part);
     return part;
@@ -98,6 +137,12 @@ export function createWorkshop(scene, textures, quality) {
   }
   for (const z of [-7, 10.25]) {
     timber({ start: [-12.45, worktop - 1.04, z], finish: [12.45, worktop - 1.04, z], height: 0.93, width: 0.42, kind: "bench" });
+  }
+  for (const [geometry, matrices] of benchParts) {
+    const batch = new InstancedMesh(geometry, materials.bench, matrices.length);
+    matrices.forEach((matrix, index) => batch.setMatrixAt(index, matrix));
+    batch.receiveShadow = true;
+    scene.add(batch);
   }
 
   const sky = new HemisphereLight(0xf4f3ee, 0x9b7656, 1.03);

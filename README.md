@@ -18,7 +18,7 @@ python -m http.server 8000
 
 Open [localhost:8000](http://localhost:8000) when using the local server. The site uses HTML, CSS, and JavaScript with a bundled copy of Three.js. The checked-in local bundle lets the workshop run from a file URL. If WebGL 2 is unavailable, the section shows a preview image and explains why.
 
-After editing the bridge renderer, model, workshop code, or workshop textures, update the file-URL bundle.
+After changing the bridge code or its textures, regenerate the hosted ES module and the file-URL bundle. Run the same command after editing the homepage scripts or `style.css` to refresh their versioned URLs in `index.html`.
 
 ```sh
 npm exec --yes --package=esbuild@0.25.11 -- node scripts/bundle-bridge-local.mjs
@@ -31,6 +31,7 @@ npm exec --yes --package=esbuild@0.25.11 -- node scripts/bundle-bridge-local.mjs
 | `index.html` | Page content, programme, and registration links |
 | `style.css`, `theme.css` | Layout, responsive styles, and typography |
 | `app.js` | Programme dialogs, mobile navigation, and calendar download |
+| `bridge-loading.js` | Predictive loading, shared asset requests, and bridge lifecycle |
 | `bridge-viewer.js` | WebGL rendering, scroll scrubbing and camera |
 | `bridge-model.js` | Truss members, construction order and placement |
 | `bridge-workshop.js` | Workshop geometry, textures, props and lighting |
@@ -48,7 +49,26 @@ npm exec --yes --package=esbuild@0.25.11 -- node scripts/bundle-bridge-local.mjs
 
 Serve the repository root on a static host with `index.html` as the entry point. Keep the relative paths to the stylesheets, scripts, `vendor/`, `assets/`, and `ICE Logo Banner.jfif.jpeg` intact.
 
-The intro plays on first visit and on reload. Use `?intro=1` to replay it on demand, or set `data-ice-intro="off"` in `index.html` to disable it. Visitors can dismiss it with **Skip Intro** or **Escape**, and the site bypasses it when their browser requests reduced motion.
+The intro plays on full navigations and reloads. Visitors can dismiss it with **Skip Intro** or **Escape**. It respects the browser's reduced-motion preference. Set `data-ice-intro="off"` in `index.html` to disable it for the site.
+
+The HTML references the scripts, stylesheet and bridge bundles by content-derived query versions. Serve the rest of the static assets with the host's normal cache validation so edits at stable URLs can be picked up. The hosted bundle loads workshop assets relative to the document, including when the site is deployed under a GitHub Pages repository path.
+
+## Performance profiling
+
+`scripts/profile-bridge.mjs` serves a local snapshot and collects Chrome DevTools Protocol measurements. Use Node.js 22 or newer. Set `CHROME_PATH` if Chrome is installed outside the default location.
+
+```sh
+node scripts/profile-bridge.mjs --enter-ms=10500 --warm
+node scripts/profile-bridge.mjs --mobile --slow --rapid --verify
+node scripts/profile-bridge.mjs --mobile --save-data --observe-ms=7000
+node scripts/profile-bridge.mjs --no-webgl --verify
+node scripts/profile-bridge.mjs --fail-asset=bench-normal.webp --verify
+node scripts/profile-bridge.mjs --file --verify
+```
+
+Use the same flags with `--root=PATH` to profile a baseline checkout. `--base=/ICE_website/` serves the site under the GitHub Pages repository path. On Windows, `--d3d11` requests hardware acceleration and `--software` requests SwiftShader. The profile reports the renderer that actually ran. `--mobile --slow` uses a 390 × 844 viewport at 2× DPR, 1.6 Mbit/s down, 150 ms latency, and 4× CPU throttling. `--rapid` dismisses the intro and jumps to the section after 1.25 seconds or as soon as the page is parsed. `--captures=PATH` saves comparison screenshots. `--captures` and `--verify` use the debug overlay to inspect assembly stages. Use the first command for a CLS sample of the ordinary page. `--no-intro --observe-ms=7000` disables the intro in the local test response so you can isolate its effect on LCP.
+
+Chrome reports LCP, CLS, resource timings and long tasks through its standard performance APIs. In the Performance panel, look for the `ice:` and `bridge:` user timings. Homepage readiness marks the first rendering opportunity after the intro and records the hero decode separately. Assets ready marks the completion of the workshop requests. Module fetch and import, texture decoding and upload, geometry, PMREM, shader preparation, and the warm-up draw have individual timings. Bridge entry uses the intersection timestamp. The first-frame mark uses the animation frame after the first live draw was submitted. The local server serves uncompressed files, so transfer figures will vary on a CDN.
 
 ## Credits
 

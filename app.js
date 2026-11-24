@@ -46,46 +46,6 @@ dialog.addEventListener("click", (event) => {
   }
 });
 
-const bridgeTrack = document.querySelector(".bridge-track");
-if (bridgeTrack) {
-  const bridgeHint = bridgeTrack.querySelector(".bridge-scroll-hint");
-  const bridgePreview = document.getElementById("bridge-preview");
-  // Reserve the scroll range before loading the renderer or textures.
-  bridgeTrack.classList.toggle("has-scroll-sequence", !matchMedia("(prefers-reduced-motion: reduce)").matches);
-  bridgePreview.hidden = true;
-  bridgeHint.hidden = false;
-  bridgeHint.textContent = "Loading the workshop…";
-
-  const showBridgeFallback = () => {
-    bridgeTrack.classList.remove("has-scroll-sequence");
-    bridgePreview.hidden = false;
-    bridgeHint.textContent = "The workshop could not load. Reload to try again.";
-  };
-  const loadBridge = () => {
-    if (location.protocol === "file:") {
-      const script = document.createElement("script");
-      script.src = "./vendor/bridge-local.js";
-      script.addEventListener("error", showBridgeFallback, { once: true });
-      document.head.append(script);
-    } else {
-      import("./bridge-viewer.js").then(({ startBridge }) => startBridge()).catch((error) => {
-        console.warn("The bridge workshop could not load.", error);
-        showBridgeFallback();
-      });
-    }
-  };
-  if ("IntersectionObserver" in window) {
-    const bridgeObserver = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting) return;
-      bridgeObserver.disconnect();
-      loadBridge();
-    }, { rootMargin: "700px 0px" });
-    bridgeObserver.observe(bridgeTrack);
-  } else {
-    loadBridge();
-  }
-}
-
 const mobileMenu = document.querySelector(".mobile-nav");
 mobileMenu.querySelectorAll("a").forEach((link) => {
   link.addEventListener("click", () => { mobileMenu.open = false; });

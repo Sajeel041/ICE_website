@@ -174,19 +174,29 @@ export function createBridgeModel(geometryFor, materials) {
     batch.mesh.frustumCulled = false;
     batch.mesh.castShadow = true;
     batch.mesh.receiveShadow = true;
+    entries.forEach((part, index) => batch.mesh.setColorAt(index, shade.setHex(part.tint)));
     group.add(batch.mesh);
   }
 
   function seek(progress) {
     let assembled = 0;
+    let changed = false;
     for (const { mesh, entries } of batches.values()) {
       let visible = 0;
+      let firstDirty = entries.length;
+      let lastDirty = -1;
+      // Each batch is in assembly order. Any stock planks are at the front and stay visible.
       for (const part of entries) {
-        if (part.stockIndex === undefined && progress < part.begin) continue;
+        if (part.stockIndex === undefined && progress < part.begin) break;
+        const index = visible++;
         const amount = clampProgress((progress - part.begin) / (part.end - part.begin));
+        if (amount === 1 && !part.offset) assembled++;
+        if (part.amount === amount) continue;
+        part.amount = amount;
+        firstDirty = Math.min(firstDirty, index);
+        lastDirty = index;
         const eased = smoothstep(amount);
         if (amount === 1) {
-          if (!part.offset) assembled++;
           dummy.position.copy(part.position);
           dummy.quaternion.copy(part.rotation);
         } else {
@@ -202,14 +212,17 @@ export function createBridgeModel(geometryFor, materials) {
           }
         }
         dummy.updateMatrix();
-        mesh.setMatrixAt(visible, part.offset ? shifted.multiplyMatrices(dummy.matrix, part.offset) : dummy.matrix);
-        mesh.setColorAt(visible++, shade.setHex(part.tint));
+        mesh.setMatrixAt(index, part.offset ? shifted.multiplyMatrices(dummy.matrix, part.offset) : dummy.matrix);
       }
+      if (lastDirty >= firstDirty) {
+        mesh.instanceMatrix.addUpdateRange(firstDirty * 16, (lastDirty - firstDirty + 1) * 16);
+        mesh.instanceMatrix.needsUpdate = true;
+        changed = true;
+      }
+      if (mesh.count !== visible) changed = true;
       mesh.count = visible;
-      mesh.instanceMatrix.needsUpdate = true;
-      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     }
-    return assembled;
+    return { assembled, changed };
   }
 
   return { group, seek, memberCount };

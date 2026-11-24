@@ -7,12 +7,14 @@
   <meta name="description" content="ConstructX 4.0 brings civil engineering students together for workshops, competitions and socials at GIK Institute, 4–6 December 2026.">
   <title>ConstructX 4.0 — ICE GIKI</title>
   <link rel="icon" type="image/svg+xml" href="assets/constructx-mark.svg">
-  <script src="intro.js"></script>
-  <link rel="preload" as="image" href="assets/bridge-blue-hour.webp" fetchpriority="high">
-  <link rel="stylesheet" href="style.css">
+  <link rel="preload" as="image" imagesrcset="assets/bridge-blue-hour-1280.webp 1280w, assets/bridge-blue-hour.webp 1774w"
+    imagesizes="(max-width: 47.5rem) max(100vw, 36rem), 100vw" fetchpriority="high">
+  <script src="intro.js?v=7f2f2825b120"></script>
+  <link rel="stylesheet" href="style.css?v=f467e1a15b40">
   <link rel="stylesheet" href="theme.css">
   <link rel="stylesheet" href="intro.css">
-  <script src="app.js" defer></script>
+  <script src="app.js?v=5e87b9914d91" defer></script>
+  <script src="bridge-loading.js?v=e43f1c27cec8" data-hosted="./vendor/bridge-hosted.js?v=e35e8e65081e" data-local="./vendor/bridge-local.js?v=55c0d34c0ea8" defer></script>
 </head>
 <body>
   <div id="ice-intro" hidden role="region" aria-label="ICE GIK Student Chapter introduction">
@@ -59,7 +61,9 @@
 
   <main id="main">
     <section class="hero" aria-labelledby="hero-title">
-      <img class="hero-scene" src="assets/bridge-blue-hour.webp" width="1774" height="887" fetchpriority="high" alt="Architectural illustration of an illuminated arch bridge over a mountain river at dusk">
+      <img class="hero-scene" src="assets/bridge-blue-hour.webp" width="1774" height="887" fetchpriority="high"
+        srcset="assets/bridge-blue-hour-1280.webp 1280w, assets/bridge-blue-hour.webp 1774w"
+        sizes="(max-width: 47.5rem) max(100vw, 36rem), 100vw" alt="Architectural illustration of an illuminated arch bridge over a mountain river at dusk">
       <div class="hero-copy">
         <p class="presented eyebrow">An ICE GIK Student Chapter event</p>
         <h1 id="hero-title">Build a bridge.<br><em>Test its limits.</em></h1>
@@ -70,7 +74,7 @@
         </div>
       </div>
       <a class="hero-model" href="#bridge-challenge">
-        <img src="assets/bridge-model.webp" width="80" height="64" alt="">
+        <img src="assets/bridge-model-thumb.webp" width="80" height="64" alt="">
         <span><small>Interactive model</small><strong>Explore the truss</strong></span>
         <span class="model-arrow" aria-hidden="true">↗</span>
       </a>
@@ -104,7 +108,9 @@
 
         <div class="module-grid">
           <article class="module-card">
-            <div class="module-visual"><img src="assets/workshop.webp" loading="lazy" width="1536" height="1024" alt="Illustrated drafting table with architectural plans and models"></div>
+            <div class="module-visual"><img src="assets/workshop.webp" loading="lazy" decoding="async" width="1536" height="1024"
+              srcset="assets/workshop-384.webp 384w, assets/workshop-768.webp 768w, assets/workshop.webp 1536w"
+              sizes="(max-width: 47.5rem) 90vw, (max-width: 97.8rem) 28vw, 440px" alt="Illustrated drafting table with architectural plans and models"></div>
             <div class="card-copy">
               <p class="eyebrow">Workshop</p>
               <h3>Technical Workshop</h3>
@@ -113,7 +119,9 @@
             </div>
           </article>
           <article class="module-card">
-            <div class="module-visual"><img src="assets/bridge-model.webp" loading="lazy" width="1536" height="1024" alt="Illustration of a wooden truss bridge model on a worktable"></div>
+            <div class="module-visual"><img src="assets/bridge-model.webp" loading="lazy" decoding="async" width="1536" height="1024"
+              srcset="assets/bridge-model-384.webp 384w, assets/bridge-model-768.webp 768w, assets/bridge-model.webp 1536w"
+              sizes="(max-width: 47.5rem) 90vw, (max-width: 97.8rem) 28vw, 440px" alt="Illustration of a wooden truss bridge model on a worktable"></div>
             <div class="card-copy">
               <p class="eyebrow">Bridge challenge</p>
               <h3>Load the Bridge</h3>
@@ -122,7 +130,9 @@
             </div>
           </article>
           <article class="module-card">
-            <div class="module-visual"><img src="assets/egg-design.webp" loading="lazy" width="1536" height="1024" alt="Illustration of a protective egg-drop frame made with bamboo and paper"></div>
+            <div class="module-visual"><img src="assets/egg-design.webp" loading="lazy" decoding="async" width="1536" height="1024"
+              srcset="assets/egg-design-384.webp 384w, assets/egg-design-768.webp 768w, assets/egg-design.webp 1536w"
+              sizes="(max-width: 47.5rem) 90vw, (max-width: 97.8rem) 28vw, 440px" alt="Illustration of a protective egg-drop frame made with bamboo and paper"></div>
             <div class="card-copy">
               <p class="eyebrow">Egg-drop challenge</p>
               <h3>Drop the Egg</h3>
@@ -139,7 +149,9 @@
       <div class="bridge-track">
         <div class="bridge-scene">
           <div class="bridge-stage">
-            <img id="bridge-preview" src="assets/bridge-model.webp" loading="lazy" width="1536" height="1024" alt="Illustration of a wooden truss bridge model">
+            <img id="bridge-preview" src="assets/bridge-model.webp" loading="lazy" decoding="async" width="1536" height="1024"
+              srcset="assets/bridge-model-768.webp 768w, assets/bridge-model.webp 1536w"
+              sizes="(max-width: 47.5rem) 80vw, 100vw" alt="Illustration of a wooden truss bridge model">
             <canvas id="bridge-canvas" role="img" aria-label="A timber truss bridge assembled on a workshop bench, with a plank deck, bracing and glued joints" hidden></canvas>
           </div>
           <div class="bridge-overlay shell">
@@ -201,7 +213,9 @@
           <p class="social-note">Theme, performers and timings to be announced.</p>
         </div>
         <figure class="social-visual">
-          <img src="assets/after-hours.webp" loading="lazy" width="1536" height="1024" alt="Illustrated outdoor concert with warm lights and a student crowd">
+          <img src="assets/after-hours.webp" loading="lazy" decoding="async" width="1536" height="1024"
+            srcset="assets/after-hours-768.webp 768w, assets/after-hours.webp 1536w"
+            sizes="(max-width: 47.5rem) 90vw, (max-width: 97.8rem) 45vw, 730px" alt="Illustrated outdoor concert with warm lights and a student crowd">
           <figcaption>Illustrative event artwork</figcaption>
         </figure>
       </div>
